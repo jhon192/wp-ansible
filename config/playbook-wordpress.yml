@@ -2,11 +2,11 @@
   hosts: wordpress
   become: true
   vars:
-    siteurl: "10.92.82.45"
-    wptitle: "wordpress"
-    wpuser: "admin"
-    wppass: "1234"
-    wpemail: "admin@example.com"
+    siteurl: {{ SITEURL }}
+    wptitle: {{ WPTITLE }}
+    wpuser: {{ WPUSER }}
+    wppass: {{ WPPASS }}
+    wpemail: {{ WPEMAIL }}
   tasks:
 
     - name: Update Repositories
