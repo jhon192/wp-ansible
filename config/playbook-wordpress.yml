@@ -1,0 +1,170 @@
+- name: Install and Configure WordPress in LXD Container
+  hosts: wordpress
+  become: true
+  vars:
+    siteurl: "10.92.82.45"
+    wptitle: "wordpress"
+    wpuser: "admin"
+    wppass: "1234"
+    wpemail: "admin@example.com"
+  tasks:
+
+    - name: Update Repositories
+      apt:
+        update_cache: yes
+        upgrade: dist
+
+    - name: Install Apache, PHP, and WP-CLI Dependencies
+      apt:
+        name:
+          - apache2
+          - php
+          - php-mysql
+          - libapache2-mod-php
+          - curl
+          - less
+          - mariadb-server
+          - mariadb-client
+          - python3-mysqldb
+          - unzip
+        state: present
+
+    - name: Start and Enable MariaDB
+      service:
+        name: mariadb
+        state: started
+        enabled: yes
+
+    - name: Create WordPress Database
+      mysql_db:
+        name: wordpress
+        state: present
+        login_user: root
+        login_password: "RootPassword"
+
+    - name: Create WordPress User
+      mysql_user:
+        name: wpuser
+        password: "TuPasswordSegura"
+        priv: "wordpress.*:ALL"
+        host: localhost
+        state: present
+        login_user: root
+        login_password: "RootPassword"
+
+    - name: Download WordPress
+      get_url:
+        url: https://wordpress.org/latest.zip
+        dest: /tmp/latest.zip
+
+    - name: Extract WordPress in /var/www/html (without extra folder)
+      unarchive:
+        src: /tmp/latest.zip
+        dest: /var/www/html/
+        remote_src: yes
+
+    - name: Remove Default index.html File
+      file:
+        path: /var/www/html/index.html
+        state: absent
+
+    - name: Create Temporary Directory to Extract WordPress
+      file:
+        path: /tmp/wp_temp
+        state: directory
+
+    - name: Create Temporary Directory to Extract WordPress
+      file:
+        path: /tmp/wp_temp
+        state: directory
+
+    - name: Extract WordPress in the Temporary Directory
+      unarchive:
+        src: /tmp/latest.zip
+        dest: /tmp/wp_temp
+        remote_src: yes
+
+    - name: Move Internal Contents of the wordpress Folder to /var/www/html
+      shell: mv /tmp/wp_temp/wordpress/* /var/www/html/
+      args:
+        executable: /bin/bash
+
+    - name: Remove the Extracted wordpress Folder in the Temporary Directory
+      file:
+        path: /tmp/wp_temp/wordpress
+        state: absent
+
+    - name: Remove Temporary Directory
+      file:
+        path: /tmp/wp_temp
+        state: absent
+
+    - name: Copy wp-config-sample.php as wp-config.php
+      copy:
+        src: /var/www/html/wp-config-sample.php
+        dest: /var/www/html/wp-config.php
+        remote_src: yes
+
+    - name: Configure wp-config.php with DB and Other Constants
+      lineinfile:
+        path: /var/www/html/wp-config.php
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+      loop:
+        - { regexp: "^define\\( 'DB_NAME'",      line: "define( 'DB_NAME', 'wordpress' );" }
+        - { regexp: "^define\\( 'DB_USER'",      line: "define( 'DB_USER', 'wpuser' );" }
+        - { regexp: "^define\\( 'DB_PASSWORD'",  line: "define( 'DB_PASSWORD', 'TuPasswordSegura' );" }
+        - { regexp: "^define\\( 'DB_HOST'",      line: "define( 'DB_HOST', 'localhost' );" }
+
+    - name: get WordPress salts
+      uri:
+        url: "https://api.wordpress.org/secret-key/1.1/salt/"
+        return_content: yes
+      register: wordpress_salts
+
+    - name: delete the default salts in wp-config.php
+      replace:
+        path: /var/www/html/wp-config.php
+        regexp: "^define\\s*\\(\\s*['\"][A-Z_]+['\"],\\s*['\"]put your unique phrase here['\"]\\s*\\);\\s*$"
+        replace: ""
+      ignore_errors: yes
+
+    - name: insert new salts in wp-config.php
+      blockinfile:
+        path: /var/www/html/wp-config.php
+        insertafter: '/\/\*\*#@\+/'
+        block: "{{ wordpress_salts.content }}"
+
+
+    - name: Adjust Permissions in /var/www/html
+      file:
+        path: /var/www/html
+        owner: www-data
+        group: www-data
+        recurse: yes
+        mode: '0755'
+        state: directory
+
+    - name: run the WordPress installation
+      uri:
+        url: "http://{{ siteurl }}/wp-admin/install.php?step=2"
+        method: POST
+        body: "weblog_title={{ wptitle }}&user_name={{ wpuser }}&admin_password={{ wppass }}&admin_password2={{ wppass }}&admin_email={{ wpemail }}"
+        headers:
+          Content-Type: "application/x-www-form-urlencoded"
+        status_code: 200
+      register: wordpress_install
+      ignore_errors: yes
+
+    - name: show the output of the WordPress installation
+      debug:
+        var: wordpress_install.content
+      ignore_errors: yes
+
+      
+
+    - name: Restart Apache
+      service:
+        name: apache2
+        state: restarted
+        enabled: yes

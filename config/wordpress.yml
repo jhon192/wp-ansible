@@ -1,0 +1,87 @@
+---
+- name: Instalar WordPress en contenedor LXC
+  hosts: wordpress
+  become: yes
+  vars:
+    # Variables para WordPress y la base de datos
+    db_root_password: 'rootpass'
+    db_name: wordpress
+    db_user: wpuser
+    db_password: 'wppass'
+    wordpress_url: 'https://wordpress.org/latest.tar.gz'
+    wordpress_install_dir: '/var/www/html/wordpress'
+  tasks:
+    - name: Actualizar repositorios y paquetes
+      apt:
+        update_cache: yes
+        upgrade: dist
+
+    - name: Instalar Apache, MySQL y PHP
+      apt:
+        name:
+          - apache2
+          - mysql-server
+          - php
+          - php-mysql
+          - libapache2-mod-php
+          - unzip
+          - curl
+          - python3-mysqldb
+        state: present
+
+    - name: Asegurar que MySQL esté iniciado
+      service:
+        name: mysql
+        state: started
+        enabled: yes
+
+    - name: Configurar la contraseña del usuario root de MySQL (si aplica)
+      mysql_user:
+        login_user: root
+        login_password: ""
+        user: root
+        password: "{{ db_root_password }}"
+        host_all: yes
+      ignore_errors: yes
+
+    - name: Crear base de datos para WordPress
+      mysql_db:
+        login_user: root
+        login_password: "{{ db_root_password }}"
+        name: "{{ db_name }}"
+        state: present
+
+    - name: Crear usuario de la base de datos para WordPress
+      mysql_user:
+        login_user: root
+        login_password: "{{ db_root_password }}"
+        name: "{{ db_user }}"
+        password: "{{ db_password }}"
+        priv: "{{ db_name }}.*:ALL"
+        state: present
+
+    - name: Descargar WordPress
+      get_url:
+        url: "{{ wordpress_url }}"
+        dest: /tmp/wordpress.tar.gz
+
+    - name: Extraer WordPress
+      unarchive:
+        src: /tmp/wordpress.tar.gz
+        dest: /var/www/html/
+        remote_src: yes
+      notify:
+        - Reiniciar Apache
+
+    - name: Asegurar permisos en el directorio de WordPress
+      file:
+        path: "{{ wordpress_install_dir }}"
+        owner: www-data
+        group: www-data
+        recurse: yes
+
+  handlers:
+    - name: Reiniciar Apache
+      service:
+        name: apache2
+        state: restarted
