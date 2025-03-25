@@ -9,6 +9,10 @@
     wpemail: "{{ WPEMAIL }}"
   tasks:
 
+    - name: Debug WordPress Variables
+      debug:
+        msg: "Site URL: {{ siteurl }}, Title: {{ wptitle }}, User: {{ wpuser }}, Email: {{ wpemail }}"
+
     - name: Update Repositories
       apt:
         update_cache: yes
