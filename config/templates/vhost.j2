@@ -1,0 +1,15 @@
+<VirtualHost *:{{ site.port }}>
+    ServerName {{ site.domain }}
+    ServerAlias www.{{ site.domain }}
+
+    DocumentRoot /var/www/{{ site.site_dir }}
+
+    <Directory "/var/www/{{ site.site_dir }}">
+        Options Indexes FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    ErrorLog ${APACHE_LOG_DIR}/{{ site.domain }}_error.log
+    CustomLog ${APACHE_LOG_DIR}/{{ site.domain }}_access.log combined
+</VirtualHost>

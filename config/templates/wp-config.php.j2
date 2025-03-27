@@ -1,0 +1,23 @@
+<?php
+define('DB_NAME', '{{ site.db_name }}');
+define('DB_USER', '{{ site.db_user }}');
+define('DB_PASSWORD', '{{ site.db_pass }}');
+define('DB_HOST', 'localhost');
+
+// Single-line WordPress salts for each key
+define('AUTH_KEY',         '{{ lookup("password", "/dev/null length=64") }}');
+define('SECURE_AUTH_KEY',  '{{ lookup("password", "/dev/null length=64") }}');
+define('LOGGED_IN_KEY',    '{{ lookup("password", "/dev/null length=64") }}');
+define('NONCE_KEY',        '{{ lookup("password", "/dev/null length=64") }}');
+define('AUTH_SALT',        '{{ lookup("password", "/dev/null length=64") }}');
+define('SECURE_AUTH_SALT', '{{ lookup("password", "/dev/null length=64") }}');
+define('LOGGED_IN_SALT',   '{{ lookup("password", "/dev/null length=64") }}');
+define('NONCE_SALT',       '{{ lookup("password", "/dev/null length=64") }}');
+
+$table_prefix = 'wp_';
+define('WP_DEBUG', false);
+
+if (!defined('ABSPATH')) {
+    define('ABSPATH', __DIR__ . '/');
+}
+require_once ABSPATH . 'wp-settings.php';
