@@ -5,18 +5,24 @@
 
   vars:
     wordpress_sites:
-      - domain: example5.com
-        host: 10.92.82.53
-        port: 8086
-        db_name: wp_example6
-        db_user: wpuser6
-        db_pass: SecurePass6!
-        wp_admin_user: admin6
-        wp_admin_pass: AdminPass6!
-        wp_admin_email: admin6@example.com
-        site_dir: sites6
+      - domain: "{{ DOMAIN }}"
+        host: "{{ HOST }}"
+        port: "{{ PORT }}"
+        db_name: "{{ DB_NAME }}"
+        db_user: "{{ DB_USER }}"
+        db_pass: "{{ DB_PASS }}"
+        wp_admin_user: "{{  WP_ADMIN_USER }}"
+        wp_admin_pass: "{{ WP_ADMIN_PASS }}"
+        wp_admin_email: "{{ WP_ADMIN_EMAIL }}"
+        site_dir: "{{ SITE_DIR }}"
 
   tasks:
+    - name: debug all variables
+      debug:
+        var: item
+      loop: "{{ wordpress_sites }}"
+
+
     - name: Install Dependencies (Apache, PHP, MariaDB, WP-CLI)
       apt:
         name:
