@@ -2,11 +2,11 @@
   hosts: wordpress
   become: true
   vars:
-    siteurl: "{{ SITEURL }}"
-    wptitle: "{{ WPTITLE }}"
-    wpuser: "{{ WPUSER }}"
-    wppass: "{{ WPPASS }}"
-    wpemail: "{{ WPEMAIL }}"
+    siteurl: "10.92.82.247"
+    wptitle: "my WordPress Site"
+    wpuser: "dbuser"
+    wppass: "TuPasswordSegura"
+    wpemail: "jdoe@yopmail.com"
   tasks:
 
     - name: Debug WordPress Variables
@@ -92,6 +92,7 @@
       shell: mv /tmp/wp_temp/wordpress/* /var/www/html/
       args:
         executable: /bin/bash
+      ignore_errors: yes
 
     - name: Remove the Extracted wordpress Folder in the Temporary Directory
       file:
@@ -136,9 +137,10 @@
     - name: insert new salts in wp-config.php
       blockinfile:
         path: /var/www/html/wp-config.php
-        insertafter: '/\/\*\*#@\+/'
-        block: "{{ wordpress_salts.content }}"
-
+        marker: ""
+        insertbefore: "^require_once ABSPATH.*wp-settings\\.php';"
+        block: |
+          {{ wordpress_salts.content }}
 
     - name: Adjust Permissions in /var/www/html
       file:
@@ -165,10 +167,31 @@
         var: wordpress_install.content
       ignore_errors: yes
 
-      
-
     - name: Restart Apache
       service:
         name: apache2
         state: restarted
         enabled: yes
+      
+    - name: Install WP-CLI
+      get_url:
+        url: https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+        dest: /usr/local/bin/wp
+        mode: '0755'
+      ignore_errors: yes
+
+    - name: Install theme via WP-CLI
+      command: >
+        wp theme install https://downloads.wordpress.org/theme/autocraft-fse.1.0.zip
+        --path=/var/www/html
+        --allow-root
+      args:
+        chdir: /usr/local/bin
+
+    - name: Activate theme via WP-CLI
+      command: >
+        wp theme activate autocraft-fse
+        --path=/var/www/html
+        --allow-root
+      args:
+        chdir: /usr/local/bin

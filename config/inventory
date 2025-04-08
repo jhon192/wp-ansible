@@ -1,2 +1,2 @@
 [wordpress]
-10.92.82.53 ansible_user=ansible ansible_ssh_private_key_file=/home/jhon/key ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+10.92.82.247 ansible_user=ansible ansible_ssh_private_key_file=/home/jhon/rsa ansible_ssh_common_args='-o StrictHostKeyChecking=no'

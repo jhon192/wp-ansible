@@ -1,0 +1,6 @@
+- hosts: wordpress
+  gather_facts: yes
+  # remove become: yes if not required
+  tasks:
+    - name: Do something as normal user
+      command: whoami

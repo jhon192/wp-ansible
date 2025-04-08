@@ -1,10 +1,10 @@
-<VirtualHost *:{{ site.port }}>
+<VirtualHost *:80>
     ServerName {{ site.domain }}
     ServerAlias www.{{ site.domain }}
 
-    DocumentRoot /var/www/{{ site.site_dir }}
+    DocumentRoot /home/{{ site.linux_user }}
 
-    <Directory "/var/www/{{ site.site_dir }}">
+    <Directory "/home/{{ site.linux_user }}">
         Options Indexes FollowSymLinks
         AllowOverride All
         Require all granted

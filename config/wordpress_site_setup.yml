@@ -1,6 +1,14 @@
-- name: Create site directory /var/www/{{ site.site_dir }}
+- name: (Optional) Create Linux user "{{ site.linux_user }}"
+  user:
+    name: "{{ site.linux_user }}"
+    home: "/home/{{ site.linux_user }}"
+    shell: /bin/bash
+    groups: "www-data"
+  ignore_errors: yes 
+
+- name: Create site directory /home/{{ site.linux_user }}
   file:
-    path: "/var/www/{{ site.site_dir }}"
+    path: "/home/{{ site.linux_user }}"
     state: directory
     owner: www-data
     group: www-data
@@ -18,14 +26,14 @@
     priv: "{{ site.db_name }}.*:ALL"
     state: present
 
-- name: Unarchive WordPress directly into /var/www/{{ site.site_dir }}
+- name: Unarchive WordPress directly into /home/{{ site.linux_user }}
   unarchive:
     src: "https://wordpress.org/latest.zip"
-    dest: "/var/www/{{ site.site_dir }}"
+    dest: "/home/{{ site.linux_user }}"
     remote_src: yes
 
 - name: Move extracted contents up and remove folder
-  shell: mv /var/www/{{ site.site_dir }}/wordpress/* /var/www/{{ site.site_dir }} && rmdir /var/www/{{ site.site_dir }}/wordpress
+  shell: mv /home/{{ site.linux_user }}/wordpress/* /home/{{ site.linux_user }} && rmdir /home/{{ site.linux_user }}/wordpress
   args:
     executable: /bin/bash
   ignore_errors: true
@@ -33,7 +41,7 @@
 - name: Configure wp-config.php
   template:
     src: wp-config.php.j2
-    dest: "/var/www/{{ site.site_dir }}/wp-config.php"
+    dest: "/home/{{ site.linux_user }}/wp-config.php"
     owner: www-data
     group: www-data
     mode: "0644"
@@ -54,9 +62,9 @@
 
 - name: run the WordPress installation
   uri:
-    url: "http://{{ site.host }}:{{ site.port }}/wp-admin/install.php?step=2"
+    url: "http://{{ site.host }}/wp-admin/install.php?step=2"
     method: POST
-    body: "weblog_title={{ site.site_dir }}&user_name={{ site.wp_admin_user }}&admin_password={{ site.wp_admin_pass }}&admin_password2={{ site.wp_admin_pass }}&admin_email={{ site.wp_admin_email }}"
+    body: "weblog_title={{ site.website_name }}&user_name={{ site.wp_admin_user }}&admin_password={{ site.wp_admin_pass }}&admin_password2={{ site.wp_admin_pass }}&admin_email={{ site.wp_admin_email }}"
     headers:
       Content-Type: "application/x-www-form-urlencoded"
     status_code: 200
