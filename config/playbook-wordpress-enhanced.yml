@@ -111,7 +111,7 @@
     - name: Activate theme via WP-CLI
       command: >
         wp theme activate oceanwp
-        --path=/home/{{ site.linux_user }}
+        --path=/home/semaphore/{{ site.linux_user }}
         --allow-root
       args:
         chdir: /usr/local/bin

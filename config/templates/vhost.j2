@@ -2,9 +2,9 @@
     ServerName {{ site.domain }}
     ServerAlias www.{{ site.domain }}
 
-    DocumentRoot /home/{{ site.linux_user }}
+    DocumentRoot /home/semaphore/{{ site.linux_user }}
 
-    <Directory "/home/{{ site.linux_user }}">
+    <Directory "/home/semaphore/{{ site.linux_user }}">
         Options Indexes FollowSymLinks
         AllowOverride All
         Require all granted

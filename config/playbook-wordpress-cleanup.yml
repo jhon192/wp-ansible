@@ -57,7 +57,7 @@
       loop_control:
         loop_var: site
       file:
-        path: "/home/{{ site.linux_user }}"
+        path: "/home/semaphore/{{ site.linux_user }}"
         state: absent
       ignore_errors: yes
 

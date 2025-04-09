@@ -1,6 +1,6 @@
 - name: Set permissions for semaphore working directory
   file:
-    path: /opt/semaphore
+    path: "/home/semaphore/{{ site.linux_user }}"
     state: directory
     recurse: yes
     owner: semaphore
@@ -10,14 +10,14 @@
 - name: (Optional) Create Linux user "{{ site.linux_user }}"
   user:
     name: "{{ site.linux_user }}"
-    home: "/home/{{ site.linux_user }}"
+    home: "/home/semaphore/{{ site.linux_user }}"
     shell: /bin/bash
     groups: "www-data"
   ignore_errors: yes 
 
-- name: Create site directory /home/{{ site.linux_user }}
+- name: Create site directory /home/semaphore/{{ site.linux_user }}
   file:
-    path: "/home/{{ site.linux_user }}"
+    path: "/home/semaphore/{{ site.linux_user }}"
     state: directory
     owner: www-data
     group: www-data
@@ -35,14 +35,14 @@
     priv: "{{ site.db_name }}.*:ALL"
     state: present
 
-- name: Unarchive WordPress directly into /home/{{ site.linux_user }}
+- name: Unarchive WordPress directly into /home/semaphore/{{ site.linux_user }}
   unarchive:
     src: "https://wordpress.org/latest.zip"
-    dest: "/home/{{ site.linux_user }}"
+    dest: "/home/semaphore/{{ site.linux_user }}"
     remote_src: yes
 
 - name: Move extracted contents up and remove folder
-  shell: mv /home/{{ site.linux_user }}/wordpress/* /home/{{ site.linux_user }} && rmdir /home/{{ site.linux_user }}/wordpress
+  shell: mv /home/semaphore/{{ site.linux_user }}/wordpress/* /home/semaphore/{{ site.linux_user }} && rmdir /home/semaphore/{{ site.linux_user }}/wordpress
   args:
     executable: /bin/bash
   ignore_errors: true
@@ -50,7 +50,7 @@
 - name: Configure wp-config.php
   template:
     src: wp-config.php.j2
-    dest: "/home/{{ site.linux_user }}/wp-config.php"
+    dest: "/home/semaphore/{{ site.linux_user }}/wp-config.php"
     owner: www-data
     group: www-data
     mode: "0644"
