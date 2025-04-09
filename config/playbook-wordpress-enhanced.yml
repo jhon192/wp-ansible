@@ -48,14 +48,6 @@
     #     update_cache: yes
     #     state: present
 
-    - name: Set permissions for semaphore working directory
-      file:
-        path: /opt/semaphore
-        state: directory
-        recurse: yes
-        owner: semaphore
-        group: semaphore
-        mode: '0755'
 
     - name: Ensure Apache modules enabled
       apache2_module:
