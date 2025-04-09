@@ -1,6 +1,5 @@
 - hosts: wordpress
   gather_facts: yes
-  become: yes
   tasks:
     - name: Do something as normal user
       command: whoami
