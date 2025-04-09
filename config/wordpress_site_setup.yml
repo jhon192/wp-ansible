@@ -1,11 +1,11 @@
-- name: Set permissions for semaphore working directory
-  file:
-    path: "/home/semaphore/{{ site.linux_user }}"
-    state: directory
-    recurse: yes
-    owner: semaphore
-    group: semaphore
-    mode: '0755'
+# - name: Set permissions for semaphore working directory
+#   file:
+#     path: "/home/semaphore/{{ site.linux_user }}"
+#     state: directory
+#     recurse: yes
+#     owner: semaphore
+#     group: semaphore
+#     mode: '0755'
 
 - name: (Optional) Create Linux user "{{ site.linux_user }}"
   user:
