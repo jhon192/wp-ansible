@@ -3,5 +3,16 @@
   tasks:
     - name: Do something as normal user
       command: "whoami"
+      register: whoami_result
+
+    - name: Display 'whoami' result
+      debug:
+        var: whoami_result.stdout
+
     - name: Do something as normal user
       command: "ansible --version"
+      register: ansible_version
+
+    - name: Display ansible version
+      debug:
+        var: ansible_version.stdout
