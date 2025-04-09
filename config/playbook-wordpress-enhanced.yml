@@ -47,7 +47,10 @@
     #       - curl
     #     update_cache: yes
     #     state: present
-
+    - name: Create database "{{ site.db_name }}"
+      mysql_db:
+        name: "{{ site.db_name }}"
+        state: present
 
     - name: Ensure Apache modules enabled
       apache2_module:

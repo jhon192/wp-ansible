@@ -27,6 +27,8 @@
   mysql_db:
     name: "{{ site.db_name }}"
     state: present
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    
 
 - name: Create DB user "{{ site.db_user }}"
   mysql_user:
@@ -34,6 +36,17 @@
     password: "{{ site.db_pass }}"
     priv: "{{ site.db_name }}.*:ALL"
     state: present
+    host: localhost
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+
+# - name: Create MySQL user for each domain
+#   mysql_user:
+#     name: "{{ item.db_user }}"
+#     password: "{{ item.db_pass }}"
+#     priv: "{{ item.db_name }}.*:ALL"
+#     host: localhost
+#     state: present
+#     login_unix_socket: /var/run/mysqld/mysqld.sock
 
 - name: Unarchive WordPress directly into /home/semaphore/{{ site.linux_user }}
   unarchive:
