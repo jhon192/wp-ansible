@@ -19,8 +19,8 @@
   file:
     path: "/home/semaphore/{{ site.linux_user }}"
     state: directory
-    owner: www-data
-    group: www-data
+    owner: semaphore
+    group: semaphore
     mode: "0755"
 
 - name: Create database "{{ site.db_name }}"
@@ -51,8 +51,8 @@
   template:
     src: wp-config.php.j2
     dest: "/home/semaphore/{{ site.linux_user }}/wp-config.php"
-    owner: www-data
-    group: www-data
+    owner: semaphore
+    group: semaphore
     mode: "0644"
 
 - name: Configure Apache VirtualHost for {{ site.domain }}
