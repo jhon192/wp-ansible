@@ -12,8 +12,8 @@
     name: "{{ site.linux_user }}"
     home: "/home/semaphore/{{ site.linux_user }}"
     shell: /bin/bash
-    groups: "www-data"
-  ignore_errors: yes 
+  groups: "www-data"
+  ignore_errors: true
 
 - name: Create site directory /home/semaphore/{{ site.linux_user }}
   file:
@@ -28,7 +28,6 @@
     name: "{{ site.db_name }}"
     state: present
     login_unix_socket: /var/run/mysqld/mysqld.sock
-    
 
 - name: Create DB user "{{ site.db_user }}"
   mysql_user:
@@ -52,7 +51,7 @@
   unarchive:
     src: "https://wordpress.org/latest.zip"
     dest: "/home/semaphore/{{ site.linux_user }}"
-    remote_src: yes
+    remote_src: true
 
 - name: Move extracted contents up and remove folder
   shell: mv /home/semaphore/{{ site.linux_user }}/wordpress/* /home/semaphore/{{ site.linux_user }} && rmdir /home/semaphore/{{ site.linux_user }}/wordpress
@@ -86,15 +85,19 @@
   uri:
     url: "http://{{ site.host }}/wp-admin/install.php?step=2"
     method: POST
-    body: "weblog_title={{ site.website_name }}&user_name={{ site.wp_admin_user }}&admin_password={{ site.wp_admin_pass }}&admin_password2={{ site.wp_admin_pass }}&admin_email={{ site.wp_admin_email }}"
+    body: >
+      weblog_title={{ site.website_name }}
+      &user_name={{ site.wp_admin_user }}
+      &admin_password={{ site.wp_admin_pass }}
+      &admin_password2={{ site.wp_admin_pass }}
+      &admin_email={{ site.wp_admin_email }}
     headers:
       Content-Type: "application/x-www-form-urlencoded"
     status_code: 200
   register: wordpress_install
-  ignore_errors: yes
+  ignore_errors: true
 
 - name: show the output of the WordPress installation
   debug:
     var: wordpress_install.content
-  ignore_errors: yes
-
+  ignore_errors: true
