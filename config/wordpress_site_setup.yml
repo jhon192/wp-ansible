@@ -12,7 +12,7 @@
     name: "{{ site.linux_user }}"
     home: "/home/semaphore/{{ site.linux_user }}"
     shell: /bin/bash
-  groups: "www-data"
+    groups: "www-data"
   ignore_errors: true
 
 - name: Create site directory /home/semaphore/{{ site.linux_user }}
