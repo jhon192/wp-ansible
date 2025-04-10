@@ -27,6 +27,7 @@
   mysql_db:
     name: "{{ site.db_name }}"
     state: present
+    login_user: "semaphore"
     login_unix_socket: /var/run/mysqld/mysqld.sock
 
 - name: Create DB user "{{ site.db_user }}"
