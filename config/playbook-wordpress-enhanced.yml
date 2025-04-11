@@ -9,11 +9,14 @@
         db_name: "{{ DB_NAME }}"
         db_user: "{{ DB_USER }}"
         db_pass: "{{ DB_PASS }}"
+        access_db_user: "{{ ACCESS_DB_USER }}"
+        access_db_pass: "{{ ACCESS_DB_PASS }}"
         wp_admin_user: "{{  WP_ADMIN_USER }}"
         wp_admin_pass: "{{ WP_ADMIN_PASS }}"
         wp_admin_email: "{{ WP_ADMIN_EMAIL }}"
         website_name: "{{ WEBSITE_NAME }}"
         linux_user: "{{ LINUX_USER }}"
+
       # - domain: example1.com
       #   host: example1.com
       #   db_name: wp_example1
