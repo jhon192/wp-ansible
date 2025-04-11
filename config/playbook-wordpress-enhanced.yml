@@ -1,8 +1,6 @@
 ---
 - name: Robust Multi-Domain WordPress Setup
   hosts: wordpress
-  gather_facts: false
-  debugger: always
   # become_user: root
   # vars:
   #   wordpress_sites:
@@ -122,11 +120,6 @@
       stat:
         path: "{{ config_file }}"
       register: cnf_file
-
-    - name: Fallar si no se encuentra el archivo de configuración
-      fail:
-        msg: "El archivo de configuración {{ config_file }} no existe."
-      when: not cnf_file.stat.exists
 
     - name: Verificar permisos del archivo de configuración
       stat:
