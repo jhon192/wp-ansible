@@ -27,7 +27,6 @@
   ansible.builtin.mysql_db:
     name: "{{ site.db_name }}"
     state: present
-    login_user: semaphore
     login_password: semaphore
     login_unix_socket: /var/run/mysqld/mysqld.sock
 
