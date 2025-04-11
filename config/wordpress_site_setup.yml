@@ -13,8 +13,7 @@
     home: "/home/semaphore/{{ site.linux_user }}"
     shell: /bin/bash
     groups: "www-data"
-  failed_when: user_result is failed
-  register: user_result
+  ignore_errors: true
 
 - name: Create site directory /home/semaphore/{{ site.linux_user }}
   ansible.builtin.file:
