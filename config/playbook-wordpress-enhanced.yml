@@ -50,16 +50,16 @@
     #     update_cache: yes
     #     state: present
 
-    - name: Ensure Apache modules enabled
-      apache2_module:
-        name: "{{ item }}"
-        state: present
-      loop:
-        - rewrite
-        - proxy
-        - proxy_http
-        - ssl
-        - headers
+    # - name: Ensure Apache modules enabled
+    #   apache2_module:
+    #     name: "{{ item }}"
+    #     state: present
+    #   loop:
+    #     - rewrite
+    #     - proxy
+    #     - proxy_http
+    #     - ssl
+    #     - headers
 
     - name: Start and Enable MariaDB
       service:
