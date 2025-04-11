@@ -28,7 +28,7 @@
 
   tasks:
     - name: Debug all variables
-      ansible.builtin.debug:
+      debug:
         var: item
       loop: "{{ wordpress_sites }}"
 
@@ -48,7 +48,7 @@
     #     state: present
 
     - name: Ensure Apache modules enabled
-      ansible.builtin.apache2_module:
+      apache2_module:
         name: "{{ item }}"
         state: present
       loop:
@@ -59,7 +59,7 @@
         - headers
 
     - name: Start and Enable MariaDB
-      ansible.builtin.service:
+      service:
         name: mariadb
         state: started
         enabled: true
@@ -80,25 +80,25 @@
     #   loop: "{{ wordpress_sites }}"
 
     - name: Deploy each WordPress site
-      ansible.builtin.include_tasks: wordpress_site_setup.yml
+      include_tasks: wordpress_site_setup.yml
       loop: "{{ wordpress_sites }}"
       loop_control:
         loop_var: site
 
     - name: Restart Apache after all changes
-      ansible.builtin.service:
+      service:
         name: apache2
         state: restarted
         enabled: true
 
     - name: Install WP-CLI
-      ansible.builtin.get_url:
+      get_url:
         url: https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
         dest: /usr/local/bin/wp
         mode: "0755"
 
     - name: Install theme via WP-CLI
-      ansible.builtin.command: >
+      command: >
         wp theme install https://downloads.wordpress.org/theme/oceanwp.3.4.3.zip
         --path=/var/www/sites1
         --allow-root
@@ -106,7 +106,7 @@
         chdir: /usr/local/bin
 
     - name: Activate theme via WP-CLI
-      ansible.builtin.command: >
+      command: >
         wp theme activate oceanwp
         --path=/home/semaphore/{{ site.linux_user }}
         --allow-root
