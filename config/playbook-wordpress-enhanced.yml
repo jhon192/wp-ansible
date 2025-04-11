@@ -1,7 +1,7 @@
 ---
 - name: Robust Multi-Domain WordPress Setup
   hosts: wordpress
-  become_user: root
+  become: yes
   vars:
     wordpress_sites:
       - domain: "{{ DOMAIN }}"
