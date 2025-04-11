@@ -25,11 +25,10 @@
 
 - name: Create database "{{ site.db_name }}"
   mysql_db:
-    db: "{{ site.db_name }}"
+    name: "{{ site.db_name }}"
     state: present
     login_user: "{{ site.access_db_user }}"
     login_password: "{{ site.access_db_pass }}"
-    login_unix_socket: /var/run/mysqld/mysqld.sock
     
 
 - name: Create DB user "{{ site.db_user }}"
