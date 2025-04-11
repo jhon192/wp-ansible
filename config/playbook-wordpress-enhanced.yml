@@ -1,9 +1,9 @@
 ---
 - name: Robust Multi-Domain WordPress Setup
   hosts: wordpress
-  become: true
-  gather_facts: false
-  gather_timeout: 10
+  # become: true
+  # gather_facts: false
+  # gather_timeout: 10
   vars:
     wordpress_sites:
       - domain: "{{ DOMAIN }}"
