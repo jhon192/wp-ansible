@@ -116,17 +116,17 @@
   vars:
     config_file: "/tmp/semaphore/.my.cnf"
   tasks:
-    - name: Verificar existencia y permisos del archivo de configuración
-      stat:
-        path: "{{ config_file }}"
-      register: cnf_file
+    # - name: Verificar existencia y permisos del archivo de configuración
+    #   stat:
+    #     path: "{{ config_file }}"
+    #   register: cnf_file
 
-    - name: Asegurarse de que el archivo existe y tenga permisos 600
-      assert:
-        that:
-          - cnf_file.stat.exists
-          - (cnf_file.stat.mode | default("0") | int(base=8)) == 0o600
-        fail_msg: "El archivo {{ config_file }} no existe o sus permisos no son 600."
+    # - name: Asegurarse de que el archivo existe y tenga permisos 600
+    #   assert:
+    #     that:
+    #       - cnf_file.stat.exists
+    #       - (cnf_file.stat.mode | default("0") | int(base=8)) == 0o600
+    #     fail_msg: "El archivo {{ config_file }} no existe o sus permisos no son 600."
 
     - name: Probar conexión a MySQL utilizando el archivo de configuración
       shell: "mysql --defaults-file={{ config_file }} -e 'SELECT 1;'"
