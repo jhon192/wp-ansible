@@ -2,7 +2,7 @@
 - name: Robust Multi-Domain WordPress Setup
   hosts: wordpress
   gather_facts: true
-  become: true
+  become_user: root
   vars:
     wordpress_sites:
       - domain: "{{ DOMAIN }}"
