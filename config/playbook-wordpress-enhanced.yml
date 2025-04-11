@@ -1,114 +1,158 @@
 ---
 - name: Robust Multi-Domain WordPress Setup
   hosts: wordpress
-  gather_facts: false
-  become_user: root
+  # gather_facts: false
+  # become_user: root
+  # vars:
+  #   wordpress_sites:
+  #     - domain: "{{ DOMAIN }}"
+  #       host: "{{ HOST }}"
+  #       db_name: "{{ DB_NAME }}"
+  #       db_user: "{{ DB_USER }}"
+  #       db_pass: "{{ DB_PASS }}"
+  #       wp_admin_user: "{{  WP_ADMIN_USER }}"
+  #       wp_admin_pass: "{{ WP_ADMIN_PASS }}"
+  #       wp_admin_email: "{{ WP_ADMIN_EMAIL }}"
+  #       website_name: "{{ WEBSITE_NAME }}"
+  #       linux_user: "{{ LINUX_USER }}"
+  #     # - domain: example1.com
+  #     #   host: example1.com
+  #     #   db_name: wp_example1
+  #     #   db_user: wpuser1
+  #     #   db_pass: SecurePass1!
+  #     #   wp_admin_user: admin1
+  #     #   wp_admin_pass: AdminPass1!
+  #     #   wp_admin_email: admin1@example.com
+  #     #   website_name: sites1
+  #     #   linux_user: user1
+
+  # tasks:
+  #   - name: Debug all variables
+  #     debug:
+  #       var: item
+  #     loop: "{{ wordpress_sites }}"
+
+  #   # - name: Install Dependencies (Apache, PHP, MariaDB, WP-CLI)
+  #   #   apt:
+  #   #     name:
+  #   #       - apache2
+  #   #       - php
+  #   #       - php-mysql
+  #   #       - libapache2-mod-php
+  #   #       - mariadb-server
+  #   #       - mariadb-client
+  #   #       - python3-mysqldb
+  #   #       - unzip
+  #   #       - curl
+  #   #     update_cache: yes
+  #   #     state: present
+
+  #   - name: Ensure Apache modules enabled
+  #     apache2_module:
+  #       name: "{{ item }}"
+  #       state: present
+  #     loop:
+  #       - rewrite
+  #       - proxy
+  #       - proxy_http
+  #       - ssl
+  #       - headers
+
+  #   - name: Start and Enable MariaDB
+  #     service:
+  #       name: mariadb
+  #       state: started
+  #       enabled: true
+
+  #   # - name: Configure firewall to allow each site port
+  #   #   ufw:
+  #   #     rule: allow
+  #   #     port: "{{ item.port }}"
+  #   #     proto: tcp
+  #   #   loop: "{{ wordpress_sites }}"
+
+  #   # - name: Add custom Listen ports to /etc/apache2/ports.conf
+  #   #   lineinfile:
+  #   #     path: /etc/apache2/ports.conf
+  #   #     line: "Listen {{ item.port }}"
+  #   #     insertafter: EOF
+  #   #     state: present
+  #   #   loop: "{{ wordpress_sites }}"
+
+  #   - name: Deploy each WordPress site
+  #     include_tasks: wordpress_site_setup.yml
+  #     loop: "{{ wordpress_sites }}"
+  #     loop_control:
+  #       loop_var: site
+
+  #   - name: Restart Apache after all changes
+  #     service:
+  #       name: apache2
+  #       state: restarted
+  #       enabled: true
+
+  #   - name: Install WP-CLI
+  #     get_url:
+  #       url: https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+  #       dest: /usr/local/bin/wp
+  #       mode: "0755"
+
+  #   - name: Install theme via WP-CLI
+  #     command: >
+  #       wp theme install https://downloads.wordpress.org/theme/oceanwp.3.4.3.zip
+  #       --path=/var/www/sites1
+  #       --allow-root
+  #     args:
+  #       chdir: /usr/local/bin
+
+  #   - name: Activate theme via WP-CLI
+  #     command: >
+  #       wp theme activate oceanwp
+  #       --path=/home/semaphore/{{ site.linux_user }}
+  #       --allow-root
+  #     args:
+  #       chdir: /usr/local/bin
+
+  become: yes  # Utiliza become si se requiere elevar privilegios
   vars:
-    wordpress_sites:
-      - domain: "{{ DOMAIN }}"
-        host: "{{ HOST }}"
-        db_name: "{{ DB_NAME }}"
-        db_user: "{{ DB_USER }}"
-        db_pass: "{{ DB_PASS }}"
-        wp_admin_user: "{{  WP_ADMIN_USER }}"
-        wp_admin_pass: "{{ WP_ADMIN_PASS }}"
-        wp_admin_email: "{{ WP_ADMIN_EMAIL }}"
-        website_name: "{{ WEBSITE_NAME }}"
-        linux_user: "{{ LINUX_USER }}"
-      # - domain: example1.com
-      #   host: example1.com
-      #   db_name: wp_example1
-      #   db_user: wpuser1
-      #   db_pass: SecurePass1!
-      #   wp_admin_user: admin1
-      #   wp_admin_pass: AdminPass1!
-      #   wp_admin_email: admin1@example.com
-      #   website_name: sites1
-      #   linux_user: user1
-
+    config_file: "/tmp/semaphore/.my.cnf"
   tasks:
-    - name: Debug all variables
+    - name: Verificar existencia del archivo de configuración {{ config_file }}
+      stat:
+        path: "{{ config_file }}"
+      register: cnf_file
+
+    - name: Fallar si no se encuentra el archivo de configuración
+      fail:
+        msg: "El archivo de configuración {{ config_file }} no existe."
+      when: not cnf_file.stat.exists
+
+    - name: Verificar permisos del archivo de configuración
+      stat:
+        path: "{{ config_file }}"
+      register: cnf_permissions
+
+    - name: Asegurarse de que los permisos sean 600
+      assert:
+        that:
+          - cnf_permissions.stat.mode | int(base=8) == 0o600
+        fail_msg: "Los permisos del archivo {{ config_file }} no son 600."
+
+    - name: Probar conexión a MySQL utilizando el archivo de configuración
+      shell: "mysql --defaults-file={{ config_file }} -e 'SELECT 1;'"
+      register: mysql_test
+      ignore_errors: yes
+
+    - name: Fallar si la conexión a MySQL falla
+      fail:
+        msg: "Error al conectarse a MySQL usando las credenciales definidas en {{ config_file }}."
+      when: mysql_test.rc != 0
+
+    - name: Consultar método de autenticación para el usuario root
+      shell: "mysql --defaults-file={{ config_file }} -e \"SELECT user, plugin, host FROM mysql.user WHERE user='root';\""
+      register: mysql_plugin
+      ignore_errors: yes
+
+    - name: Mostrar método de autenticación del usuario root
       debug:
-        var: item
-      loop: "{{ wordpress_sites }}"
-
-    # - name: Install Dependencies (Apache, PHP, MariaDB, WP-CLI)
-    #   apt:
-    #     name:
-    #       - apache2
-    #       - php
-    #       - php-mysql
-    #       - libapache2-mod-php
-    #       - mariadb-server
-    #       - mariadb-client
-    #       - python3-mysqldb
-    #       - unzip
-    #       - curl
-    #     update_cache: yes
-    #     state: present
-
-    - name: Ensure Apache modules enabled
-      apache2_module:
-        name: "{{ item }}"
-        state: present
-      loop:
-        - rewrite
-        - proxy
-        - proxy_http
-        - ssl
-        - headers
-
-    - name: Start and Enable MariaDB
-      service:
-        name: mariadb
-        state: started
-        enabled: true
-
-    # - name: Configure firewall to allow each site port
-    #   ufw:
-    #     rule: allow
-    #     port: "{{ item.port }}"
-    #     proto: tcp
-    #   loop: "{{ wordpress_sites }}"
-
-    # - name: Add custom Listen ports to /etc/apache2/ports.conf
-    #   lineinfile:
-    #     path: /etc/apache2/ports.conf
-    #     line: "Listen {{ item.port }}"
-    #     insertafter: EOF
-    #     state: present
-    #   loop: "{{ wordpress_sites }}"
-
-    - name: Deploy each WordPress site
-      include_tasks: wordpress_site_setup.yml
-      loop: "{{ wordpress_sites }}"
-      loop_control:
-        loop_var: site
-
-    - name: Restart Apache after all changes
-      service:
-        name: apache2
-        state: restarted
-        enabled: true
-
-    - name: Install WP-CLI
-      get_url:
-        url: https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
-        dest: /usr/local/bin/wp
-        mode: "0755"
-
-    - name: Install theme via WP-CLI
-      command: >
-        wp theme install https://downloads.wordpress.org/theme/oceanwp.3.4.3.zip
-        --path=/var/www/sites1
-        --allow-root
-      args:
-        chdir: /usr/local/bin
-
-    - name: Activate theme via WP-CLI
-      command: >
-        wp theme activate oceanwp
-        --path=/home/semaphore/{{ site.linux_user }}
-        --allow-root
-      args:
-        chdir: /usr/local/bin
+        msg: "El plugin de autenticación de root es:\n{{ mysql_plugin.stdout }}"   
