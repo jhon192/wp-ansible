@@ -39,6 +39,8 @@
     name: "{{ site.db_user }}"
     password: "{{ site.db_pass }}"
     priv: "{{ site.db_name }}.*:ALL"
+    login_user: "{{ site.access_db_user }}"
+    login_password: "{{ site.access_db_pass }}"
     state: present
     host: localhost
     login_unix_socket: /var/run/mysqld/mysqld.sock
