@@ -113,36 +113,54 @@
   #       chdir: /usr/local/bin
 
   # become: yes  # Utiliza become si se requiere elevar privilegios
-  vars:
-    config_file: "/tmp/semaphore/.my.cnf"
   tasks:
-    # - name: Verificar existencia y permisos del archivo de configuración
-    #   stat:
-    #     path: "{{ config_file }}"
-    #   register: cnf_file
-
-    # - name: Asegurarse de que el archivo existe y tenga permisos 600
-    #   assert:
-    #     that:
-    #       - cnf_file.stat.exists
-    #       - (cnf_file.stat.mode | default("0") | int(base=8)) == 0o600
-    #     fail_msg: "El archivo {{ config_file }} no existe o sus permisos no son 600."
-
-    - name: Probar conexión a MySQL utilizando el archivo de configuración
-      shell: "mysql --defaults-file={{ config_file }} -e 'SELECT 1;'"
-      register: mysql_test
+    - name: Verificar que MySQL esté instalado consultando su versión
+      command: mysql --version
+      register: mysql_version
       ignore_errors: yes
 
-    - name: Fallar si la conexión a MySQL falla
+    - name: Fallar si MySQL no está instalado
       fail:
-        msg: "Error al conectarse a MySQL usando las credenciales definidas en {{ config_file }}."
-      when: mysql_test.rc != 0
+        msg: "MySQL no está instalado en este sistema."
+      when: mysql_version.rc != 0
 
-    - name: Consultar método de autenticación para el usuario root
-      shell: "mysql --defaults-file={{ config_file }} -e \"SELECT user, plugin, host FROM mysql.user WHERE user='root';\""
-      register: mysql_plugin
+    - name: Mostrar versión de MySQL
+      debug:
+        msg: "MySQL está instalado: {{ mysql_version.stdout }}"
+
+    - name: Recopilar información de servicios para verificar MySQL
+      service_facts:
+
+    - name: Verificar que el servicio de MySQL esté activo
+      assert:
+        that:
+          - "'mysql' in services or 'mysqld' in services or 'mariadb' in services"
+        fail_msg: "El servicio MySQL no se encuentra activo."
+      vars:
+        services: "{{ ansible_facts.services | dict2items | map(attribute='key') | list }}"
+
+    - name: Mostrar los servicios encontrados relacionados con MySQL
+      debug:
+        msg: >
+          Se han encontrado estos servicios:
+          {% for svc in services %}
+            {% if svc in ['mysql', 'mysqld', 'mariadb'] %}
+              - {{ svc }}
+            {% endif %}
+          {% endfor %}
+      vars:
+        services: "{{ ansible_facts.services | dict2items | map(attribute='key') | list }}"
+
+    - name: Probar acceso a MySQL y listar usuarios
+      shell: "mysql -e 'SELECT User, Host FROM mysql.user;'"
+      register: mysql_users
       ignore_errors: yes
 
-    - name: Mostrar método de autenticación del usuario root
+    - name: Fallar si no se puede acceder a MySQL o listar los usuarios
+      fail:
+        msg: "No se pudo acceder a MySQL o listar los usuarios. Verifica la configuración de MySQL y los permisos."
+      when: mysql_users.rc != 0
+
+    - name: Mostrar usuarios de MySQL
       debug:
-        msg: "El plugin de autenticación de root es:\n{{ mysql_plugin.stdout }}"   
+        msg: "Usuarios de MySQL:\n{{ mysql_users.stdout }}"
