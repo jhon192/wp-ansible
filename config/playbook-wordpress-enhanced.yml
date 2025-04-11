@@ -1,7 +1,7 @@
 ---
 - name: Robust Multi-Domain WordPress Setup
   hosts: wordpress
-  become: yes
+  # become: yes
   vars:
     wordpress_sites:
       - domain: "{{ DOMAIN }}"
@@ -34,20 +34,20 @@
         var: item
       loop: "{{ wordpress_sites }}"
 
-    - name: Install Dependencies (Apache, PHP, MariaDB, WP-CLI)
-      apt:
-        name:
-          - apache2
-          - php
-          - php-mysql
-          - libapache2-mod-php
-          - mariadb-server
-          - mariadb-client
-          - python3-mysqldb
-          - unzip
-          - curl
-        update_cache: yes
-        state: present
+    # - name: Install Dependencies (Apache, PHP, MariaDB, WP-CLI)
+    #   apt:
+    #     name:
+    #       - apache2
+    #       - php
+    #       - php-mysql
+    #       - libapache2-mod-php
+    #       - mariadb-server
+    #       - mariadb-client
+    #       - python3-mysqldb
+    #       - unzip
+    #       - curl
+    #     update_cache: yes
+    #     state: present
 
     - name: Ensure Apache modules enabled
       apache2_module:
