@@ -1,7 +1,7 @@
 ---
 - name: Robust Multi-Domain WordPress Setup
   hosts: wordpress
-  # gather_facts: false
+  gather_facts: false
   # become_user: root
   # vars:
   #   wordpress_sites:
