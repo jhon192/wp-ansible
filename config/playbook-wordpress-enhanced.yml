@@ -1,166 +1,115 @@
 ---
 - name: Robust Multi-Domain WordPress Setup
   hosts: wordpress
-  # become_user: root
-  # vars:
-  #   wordpress_sites:
-  #     - domain: "{{ DOMAIN }}"
-  #       host: "{{ HOST }}"
-  #       db_name: "{{ DB_NAME }}"
-  #       db_user: "{{ DB_USER }}"
-  #       db_pass: "{{ DB_PASS }}"
-  #       wp_admin_user: "{{  WP_ADMIN_USER }}"
-  #       wp_admin_pass: "{{ WP_ADMIN_PASS }}"
-  #       wp_admin_email: "{{ WP_ADMIN_EMAIL }}"
-  #       website_name: "{{ WEBSITE_NAME }}"
-  #       linux_user: "{{ LINUX_USER }}"
-  #     # - domain: example1.com
-  #     #   host: example1.com
-  #     #   db_name: wp_example1
-  #     #   db_user: wpuser1
-  #     #   db_pass: SecurePass1!
-  #     #   wp_admin_user: admin1
-  #     #   wp_admin_pass: AdminPass1!
-  #     #   wp_admin_email: admin1@example.com
-  #     #   website_name: sites1
-  #     #   linux_user: user1
+  become_user: root
+  vars:
+    wordpress_sites:
+      - domain: "{{ DOMAIN }}"
+        host: "{{ HOST }}"
+        db_name: "{{ DB_NAME }}"
+        db_user: "{{ DB_USER }}"
+        db_pass: "{{ DB_PASS }}"
+        wp_admin_user: "{{  WP_ADMIN_USER }}"
+        wp_admin_pass: "{{ WP_ADMIN_PASS }}"
+        wp_admin_email: "{{ WP_ADMIN_EMAIL }}"
+        website_name: "{{ WEBSITE_NAME }}"
+        linux_user: "{{ LINUX_USER }}"
+      # - domain: example1.com
+      #   host: example1.com
+      #   db_name: wp_example1
+      #   db_user: wpuser1
+      #   db_pass: SecurePass1!
+      #   wp_admin_user: admin1
+      #   wp_admin_pass: AdminPass1!
+      #   wp_admin_email: admin1@example.com
+      #   website_name: sites1
+      #   linux_user: user1
 
-  # tasks:
-  #   - name: Debug all variables
-  #     debug:
-  #       var: item
-  #     loop: "{{ wordpress_sites }}"
-
-  #   # - name: Install Dependencies (Apache, PHP, MariaDB, WP-CLI)
-  #   #   apt:
-  #   #     name:
-  #   #       - apache2
-  #   #       - php
-  #   #       - php-mysql
-  #   #       - libapache2-mod-php
-  #   #       - mariadb-server
-  #   #       - mariadb-client
-  #   #       - python3-mysqldb
-  #   #       - unzip
-  #   #       - curl
-  #   #     update_cache: yes
-  #   #     state: present
-
-  #   - name: Ensure Apache modules enabled
-  #     apache2_module:
-  #       name: "{{ item }}"
-  #       state: present
-  #     loop:
-  #       - rewrite
-  #       - proxy
-  #       - proxy_http
-  #       - ssl
-  #       - headers
-
-  #   - name: Start and Enable MariaDB
-  #     service:
-  #       name: mariadb
-  #       state: started
-  #       enabled: true
-
-  #   # - name: Configure firewall to allow each site port
-  #   #   ufw:
-  #   #     rule: allow
-  #   #     port: "{{ item.port }}"
-  #   #     proto: tcp
-  #   #   loop: "{{ wordpress_sites }}"
-
-  #   # - name: Add custom Listen ports to /etc/apache2/ports.conf
-  #   #   lineinfile:
-  #   #     path: /etc/apache2/ports.conf
-  #   #     line: "Listen {{ item.port }}"
-  #   #     insertafter: EOF
-  #   #     state: present
-  #   #   loop: "{{ wordpress_sites }}"
-
-  #   - name: Deploy each WordPress site
-  #     include_tasks: wordpress_site_setup.yml
-  #     loop: "{{ wordpress_sites }}"
-  #     loop_control:
-  #       loop_var: site
-
-  #   - name: Restart Apache after all changes
-  #     service:
-  #       name: apache2
-  #       state: restarted
-  #       enabled: true
-
-  #   - name: Install WP-CLI
-  #     get_url:
-  #       url: https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
-  #       dest: /usr/local/bin/wp
-  #       mode: "0755"
-
-  #   - name: Install theme via WP-CLI
-  #     command: >
-  #       wp theme install https://downloads.wordpress.org/theme/oceanwp.3.4.3.zip
-  #       --path=/var/www/sites1
-  #       --allow-root
-  #     args:
-  #       chdir: /usr/local/bin
-
-  #   - name: Activate theme via WP-CLI
-  #     command: >
-  #       wp theme activate oceanwp
-  #       --path=/home/semaphore/{{ site.linux_user }}
-  #       --allow-root
-  #     args:
-  #       chdir: /usr/local/bin
-
-  # become: yes  # Utiliza become si se requiere elevar privilegios
   tasks:
-    - name: Verificar que MySQL esté instalado consultando su versión
-      command: mysql --version
-      register: mysql_version
-      ignore_errors: yes
-
-    - name: Fallar si MySQL no está instalado
-      fail:
-        msg: "MySQL no está instalado en este sistema."
-      when: mysql_version.rc != 0
-
-    - name: Mostrar versión de MySQL
+    - name: Debug all variables
       debug:
-        msg: "MySQL está instalado: {{ mysql_version.stdout }}"
+        var: item
+      loop: "{{ wordpress_sites }}"
 
-    - name: Recopilar información de servicios para verificar MySQL
-      service_facts:
+    # - name: Install Dependencies (Apache, PHP, MariaDB, WP-CLI)
+    #   apt:
+    #     name:
+    #       - apache2
+    #       - php
+    #       - php-mysql
+    #       - libapache2-mod-php
+    #       - mariadb-server
+    #       - mariadb-client
+    #       - python3-mysqldb
+    #       - unzip
+    #       - curl
+    #     update_cache: yes
+    #     state: present
 
-    - name: Verificar que el servicio de MySQL esté activo
-      assert:
-        that:
-          - "'mysql' in services or 'mysqld' in services or 'mariadb' in services"
-        fail_msg: "El servicio MySQL no se encuentra activo."
-      vars:
-        services: "{{ ansible_facts.services | dict2items | map(attribute='key') | list }}"
+    - name: Ensure Apache modules enabled
+      apache2_module:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - rewrite
+        - proxy
+        - proxy_http
+        - ssl
+        - headers
 
-    - name: Mostrar los servicios encontrados relacionados con MySQL
-      debug:
-        msg: >
-          Se han encontrado estos servicios:
-          {% for svc in services %}
-            {% if svc in ['mysql', 'mysqld', 'mariadb'] %}
-              - {{ svc }}
-            {% endif %}
-          {% endfor %}
-      vars:
-        services: "{{ ansible_facts.services | dict2items | map(attribute='key') | list }}"
+    - name: Start and Enable MariaDB
+      service:
+        name: mariadb
+        state: started
+        enabled: true
 
-    - name: Probar acceso a MySQL y listar usuarios
-      shell: "mysql -u root -e 'SELECT User, Host FROM mysql.user;'"
-      register: mysql_users
-      ignore_errors: yes
+    # - name: Configure firewall to allow each site port
+    #   ufw:
+    #     rule: allow
+    #     port: "{{ item.port }}"
+    #     proto: tcp
+    #   loop: "{{ wordpress_sites }}"
 
-    - name: Fallar si no se puede acceder a MySQL o listar los usuarios
-      fail:
-        msg: "No se pudo acceder a MySQL o listar los usuarios. Verifica la configuración de MySQL y los permisos."
-      when: mysql_users.rc != 0
+    # - name: Add custom Listen ports to /etc/apache2/ports.conf
+    #   lineinfile:
+    #     path: /etc/apache2/ports.conf
+    #     line: "Listen {{ item.port }}"
+    #     insertafter: EOF
+    #     state: present
+    #   loop: "{{ wordpress_sites }}"
 
-    - name: Mostrar usuarios de MySQL
-      debug:
-        msg: "Usuarios de MySQL:\n{{ mysql_users.stdout }}"
+    - name: Deploy each WordPress site
+      include_tasks: wordpress_site_setup.yml
+      loop: "{{ wordpress_sites }}"
+      loop_control:
+        loop_var: site
+
+    - name: Restart Apache after all changes
+      service:
+        name: apache2
+        state: restarted
+        enabled: true
+
+    - name: Install WP-CLI
+      get_url:
+        url: https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+        dest: /usr/local/bin/wp
+        mode: "0755"
+
+    - name: Install theme via WP-CLI
+      command: >
+        wp theme install https://downloads.wordpress.org/theme/oceanwp.3.4.3.zip
+        --path=/var/www/sites1
+        --allow-root
+      args:
+        chdir: /usr/local/bin
+
+    - name: Activate theme via WP-CLI
+      command: >
+        wp theme activate oceanwp
+        --path=/home/semaphore/{{ site.linux_user }}
+        --allow-root
+      args:
+        chdir: /usr/local/bin
+
+ 
