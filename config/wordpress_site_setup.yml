@@ -13,10 +13,11 @@
     home: "/home/semaphore/{{ site.linux_user }}"
     shell: /bin/bash
     groups: "www-data"
-  ignore_errors: true
+  failed_when: user_result is failed
+  register: user_result
 
 - name: Create site directory /home/semaphore/{{ site.linux_user }}
-  file:
+  ansible.builtin.file:
     path: "/home/semaphore/{{ site.linux_user }}"
     state: directory
     owner: semaphore
@@ -24,14 +25,13 @@
     mode: "0755"
 
 - name: Create database "{{ site.db_name }}"
-  mysql_db:
+  ansible.builtin.mysql_db:
     name: "{{ site.db_name }}"
     state: present
-    login_user: "semaphore"
     login_unix_socket: /var/run/mysqld/mysqld.sock
 
 - name: Create DB user "{{ site.db_user }}"
-  mysql_user:
+  ansible.builtin.mysql_user:
     name: "{{ site.db_user }}"
     password: "{{ site.db_pass }}"
     priv: "{{ site.db_name }}.*:ALL"
@@ -49,19 +49,22 @@
 #     login_unix_socket: /var/run/mysqld/mysqld.sock
 
 - name: Unarchive WordPress directly into /home/semaphore/{{ site.linux_user }}
-  unarchive:
+  ansible.builtin.unarchive:
     src: "https://wordpress.org/latest.zip"
     dest: "/home/semaphore/{{ site.linux_user }}"
     remote_src: true
 
 - name: Move extracted contents up and remove folder
-  shell: mv /home/semaphore/{{ site.linux_user }}/wordpress/* /home/semaphore/{{ site.linux_user }} && rmdir /home/semaphore/{{ site.linux_user }}/wordpress
+  ansible.builtin.shell:
+    cmd: >
+      mv /home/semaphore/{{ site.linux_user }}/wordpress/* /home/semaphore/{{ site.linux_user }}
+      && rmdir /home/semaphore/{{ site.linux_user }}/wordpress
   args:
     executable: /bin/bash
   ignore_errors: true
 
 - name: Configure wp-config.php
-  template:
+  ansible.builtin.template:
     src: wp-config.php.j2
     dest: "/home/semaphore/{{ site.linux_user }}/wp-config.php"
     owner: semaphore
@@ -69,21 +72,21 @@
     mode: "0644"
 
 - name: Configure Apache VirtualHost for {{ site.domain }}
-  template:
+  ansible.builtin.template:
     src: "vhost.j2"
     dest: "/etc/apache2/sites-available/{{ site.domain }}.conf"
 
 - name: a2ensite {{ site.domain }}
-  command: a2ensite {{ site.domain }}
+  ansible.builtin.command: a2ensite {{ site.domain }}
 
 - name: Restart Apache after all changes
-  service:
+  ansible.builtin.service:
     name: apache2
     state: restarted
     enabled: true
 
-- name: run the WordPress installation
-  uri:
+- name: Run the WordPress installation
+  ansible.builtin.uri:
     url: "http://{{ site.host }}/wp-admin/install.php?step=2"
     method: POST
     body: >
@@ -96,9 +99,4 @@
       Content-Type: "application/x-www-form-urlencoded"
     status_code: 200
   register: wordpress_install
-  ignore_errors: true
-
-- name: show the output of the WordPress installation
-  debug:
-    var: wordpress_install.content
-  ignore_errors: true
+  failed_when: wordpress_install.status != 200

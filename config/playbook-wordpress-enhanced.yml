@@ -4,7 +4,7 @@
   # become: true
   # become_method: sudo
   vars:
-    wordpress_sites: 
+    wordpress_sites:
       - domain: "{{ DOMAIN }}"
         host: "{{ HOST }}"
         db_name: "{{ DB_NAME }}"
@@ -24,14 +24,13 @@
       #   wp_admin_pass: AdminPass1!
       #   wp_admin_email: admin1@example.com
       #   website_name: sites1
-      #   linux_user: user1  
+      #   linux_user: user1
 
   tasks:
-    - name: debug all variables
-      debug:
+    - name: Debug all variables
+      ansible.builtin.debug:
         var: item
       loop: "{{ wordpress_sites }}"
-
 
     # - name: Install Dependencies (Apache, PHP, MariaDB, WP-CLI)
     #   apt:
@@ -49,7 +48,7 @@
     #     state: present
 
     - name: Ensure Apache modules enabled
-      apache2_module:
+      ansible.builtin.apache2_module:
         name: "{{ item }}"
         state: present
       loop:
@@ -60,7 +59,7 @@
         - headers
 
     - name: Start and Enable MariaDB
-      service:
+      ansible.builtin.service:
         name: mariadb
         state: started
         enabled: true
@@ -81,26 +80,25 @@
     #   loop: "{{ wordpress_sites }}"
 
     - name: Deploy each WordPress site
-      include_tasks: wordpress_site_setup.yml
+      ansible.builtin.include_tasks: wordpress_site_setup.yml
       loop: "{{ wordpress_sites }}"
       loop_control:
         loop_var: site
 
     - name: Restart Apache after all changes
-      service:
+      ansible.builtin.service:
         name: apache2
         state: restarted
         enabled: true
 
-      
     - name: Install WP-CLI
-      get_url:
+      ansible.builtin.get_url:
         url: https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
         dest: /usr/local/bin/wp
-        mode: '0755'
+        mode: "0755"
 
     - name: Install theme via WP-CLI
-      command: >
+      ansible.builtin.command: >
         wp theme install https://downloads.wordpress.org/theme/oceanwp.3.4.3.zip
         --path=/var/www/sites1
         --allow-root
@@ -108,7 +106,7 @@
         chdir: /usr/local/bin
 
     - name: Activate theme via WP-CLI
-      command: >
+      ansible.builtin.command: >
         wp theme activate oceanwp
         --path=/home/semaphore/{{ site.linux_user }}
         --allow-root
