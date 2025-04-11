@@ -114,7 +114,7 @@
   #     args:
   #       chdir: /usr/local/bin
 
-  become: yes  # Utiliza become si se requiere elevar privilegios
+  # become: yes  # Utiliza become si se requiere elevar privilegios
   vars:
     config_file: "/tmp/semaphore/.my.cnf"
   tasks:
