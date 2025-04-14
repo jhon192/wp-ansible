@@ -84,7 +84,6 @@
     owner: root
     group: root
     mode: 0644
-  become: true
 
 - name: a2ensite {{ site.domain }}
   command: a2ensite {{ site.domain }}
