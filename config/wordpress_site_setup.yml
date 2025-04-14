@@ -81,7 +81,9 @@
   template:
     src: "vhost.j2"
     dest: "/etc/apache2/sites-available/{{ site.domain }}.conf"
-
+    owner: root
+    group: root
+    mode: 0644
 
 - name: a2ensite {{ site.domain }}
   command: a2ensite {{ site.domain }}
