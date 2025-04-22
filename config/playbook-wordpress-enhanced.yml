@@ -1,6 +1,7 @@
 ---
 - name: Robust Multi-Domain WordPress Setup
   hosts: localhost
+  become: true
   # gather_timeout: 10
   vars:
     wordpress_sites:
