@@ -72,12 +72,6 @@
   become: true
   command: a2ensite {{ site.domain }}
 
-- name: Restart Apache after all changes
-  service:
-    name: apache2
-    state: restarted
-    enabled: true
-
 - name: Run the WordPress installation
   uri:
     url: "http://{{ site.linux_user }}/wp-admin/install.php?step=2"
