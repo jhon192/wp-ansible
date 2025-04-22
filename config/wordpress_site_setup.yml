@@ -60,6 +60,7 @@
 
 
 - name: Configure Apache VirtualHost for {{ site.domain }}
+  become: true
   template:
     src: "vhost.j2"
     dest: "/etc/apache2/sites-available/{{ site.domain }}.conf"
