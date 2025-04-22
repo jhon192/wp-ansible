@@ -1,12 +1,3 @@
-# - name: Set permissions for semaphore working directory
-#   file:
-#     path: "/home/semaphore/{{ site.linux_user }}"
-#     state: directory
-#     recurse: yes
-#     owner: semaphore
-#     group: semaphore
-#     mode: '0755'
-
 - name: (Optional) Create Linux user "{{ site.linux_user }}"
   user:
     name: "{{ site.linux_user }}"
@@ -31,8 +22,6 @@
     login_password: "{{ site.access_db_pass }}"
     login_unix_socket: /var/run/mysqld/mysqld.sock
     
-    
-    
 
 - name: Create DB user "{{ site.db_user }}"
   mysql_user:
@@ -45,14 +34,6 @@
     host: localhost
     login_unix_socket: /var/run/mysqld/mysqld.sock
 
-# - name: Create MySQL user for each domain
-#   mysql_user:
-#     name: "{{ item.db_user }}"
-#     password: "{{ item.db_pass }}"
-#     priv: "{{ item.db_name }}.*:ALL"
-#     host: localhost
-#     state: present
-#     login_unix_socket: /var/run/mysqld/mysqld.sock
 
 - name: Unarchive WordPress directly into /home/semaphore/{{ site.linux_user }}
   unarchive:
@@ -77,27 +58,22 @@
     group: semaphore
     mode: "0644"
 
-- name: Check permissions of /etc/apache2/sites-available
-  command: ls -ld /etc/apache2/sites-available
-  register: apache_sites_dir
-  changed_when: false
-
-- name: Show permissions of Apache sites-available directory
-  debug:
-    var: apache_sites_dir.stdout
 
 - name: Configure Apache VirtualHost for {{ site.domain }}
+  become: true
   template:
     src: "vhost.j2"
     dest: "/etc/apache2/sites-available/{{ site.domain }}.conf"
-    owner: semaphore
-    group: semaphore
+    owner: root
+    group: root
     mode: "0644"
 
 - name: a2ensite {{ site.domain }}
+  become: true
   command: a2ensite {{ site.domain }}
 
 - name: Restart Apache after all changes
+  become: true
   service:
     name: apache2
     state: restarted
