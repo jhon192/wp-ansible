@@ -1,0 +1,86 @@
+---
+- name: Tear‑down all WordPress sites, DBs, and vhosts
+  hosts: localhost
+  become: true
+  gather_facts: false 
+
+  vars:
+    # Re–use the same data structure the original playbooks expect
+    wordpress_sites:
+      - domain: "{{ DOMAIN }}"
+        host: "{{ HOST }}"
+        db_name: "{{ DB_NAME }}"
+        db_user: "{{ DB_USER }}"
+        db_pass: "{{ DB_PASS }}"
+        access_db_user: "{{ ACCESS_DB_USER }}"
+        access_db_pass: "{{ ACCESS_DB_PASS }}"
+        linux_user: "{{ LINUX_USER }}"
+
+  tasks:
+
+    - name: Disable Apache site {{ site.domain }}
+      command: a2dissite {{ site.domain }}
+      loop: "{{ wordpress_sites }}"
+      loop_control:
+        loop_var: site
+      ignore_errors: true          # skip if the vhost isn’t enabled
+
+    - name: Remove Apache vhost file
+      file:
+        path: "/etc/apache2/sites-available/{{ site.domain }}.conf"
+        state: absent
+      loop: "{{ wordpress_sites }}"
+      loop_control:
+        loop_var: site
+      ignore_errors: true
+
+    - name: Reload Apache to apply changes
+      service:
+        name: apache2
+        state: reloaded
+
+    - name: Drop MySQL database {{ site.db_name }}
+      mysql_db:
+        name: "{{ site.db_name }}"
+        state: absent
+        login_user: "{{ site.access_db_user }}"
+        login_password: "{{ site.access_db_pass }}"
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+      loop: "{{ wordpress_sites }}"
+      loop_control:
+        loop_var: site
+
+    - name: Remove MySQL user {{ site.db_user }}
+      mysql_user:
+        name: "{{ site.db_user }}"
+        state: absent
+        host: localhost
+        login_user: "{{ site.access_db_user }}"
+        login_password: "{{ site.access_db_pass }}"
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+      loop: "{{ wordpress_sites }}"
+      loop_control:
+        loop_var: site
+      ignore_errors: true          # skip if user already gone
+
+    - name: Delete WordPress directory
+      file:
+        path: "/home/semaphore/{{ site.linux_user }}"
+        state: absent
+      loop: "{{ wordpress_sites }}"
+      loop_control:
+        loop_var: site
+      ignore_errors: true
+
+    # (Optional) Remove the Linux user that owned the site files.
+    # Uncomment if that user is throw‑away for each site.
+    #
+    # - name: Remove Linux user {{ site.linux_user }}
+    #   user:
+    #     name: "{{ site.linux_user }}"
+    #     state: absent
+    #     remove: true          # also remove home dir / mail spool
+    #   loop: "{{ wordpress_sites }}"
+    #   loop_control:
+    #     loop_var: site
+    #   ignore_errors: true
