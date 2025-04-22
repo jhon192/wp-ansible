@@ -73,7 +73,6 @@
   command: a2ensite {{ site.domain }}
 
 - name: Restart Apache after all changes
-  become: true
   service:
     name: apache2
     state: restarted
