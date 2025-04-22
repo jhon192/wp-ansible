@@ -2,8 +2,6 @@
 - name: Robust Multi-Domain WordPress Setup
   hosts: wordpress
   become: true
-  become_user: semaphore
-  gather_facts: true
   # gather_timeout: 10
   vars:
     wordpress_sites:
