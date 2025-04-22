@@ -1,18 +1,11 @@
-- hosts: wordpress
-  gather_facts: yes
+- hosts: localhost
+  become: true
+  vars:
+    ansible_connection: local
   tasks:
-    - name: Do something as normal user
-      command: "whoami"
+    - name: Who am I?
+      command: whoami
       register: whoami_result
 
-    - name: Display 'whoami' result
-      debug:
-        var: whoami_result.stdout
-
-    - name: Do something as normal user
-      command: "ansible --version"
-      register: ansible_version
-
-    - name: Display ansible version
-      debug:
-        var: ansible_version.stdout
+    - debug:
+        msg: "Running as {{ whoami_result.stdout }}"
