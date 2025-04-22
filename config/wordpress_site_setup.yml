@@ -1,10 +1,10 @@
-- name: (Optional) Create Linux user "{{ site.linux_user }}"
-  user:
-    name: "{{ site.linux_user }}"
-    home: "/home/semaphore/{{ site.linux_user }}"
-    shell: /bin/bash
-    groups: "www-data"
-  ignore_errors: true
+# - name: (Optional) Create Linux user "{{ site.linux_user }}"
+#   user:
+#     name: "{{ site.linux_user }}"
+#     home: "/home/semaphore/{{ site.linux_user }}"
+#     shell: /bin/bash
+#     groups: "www-data"
+#   ignore_errors: true
 
 - name: Create site directory /home/semaphore/{{ site.linux_user }}
   file:
@@ -80,7 +80,7 @@
 
 - name: Run the WordPress installation
   uri:
-    url: "http://{{ site.host }}/wp-admin/install.php?step=2"
+    url: "http://{{ site.linux_user }}/wp-admin/install.php?step=2"
     method: POST
     body: >
       weblog_title={{ site.website_name }}
