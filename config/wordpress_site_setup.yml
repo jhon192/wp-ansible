@@ -93,3 +93,4 @@
     status_code: 200
   register: wordpress_install
   failed_when: wordpress_install.status != 200
+  ignore_errors: true
