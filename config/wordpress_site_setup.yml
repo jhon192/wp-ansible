@@ -77,6 +77,15 @@
     group: semaphore
     mode: "0644"
 
+- name: Check permissions of /etc/apache2/sites-available
+  command: ls -ld /etc/apache2/sites-available
+  register: apache_sites_dir
+  changed_when: false
+
+- name: Show permissions of Apache sites-available directory
+  debug:
+    var: apache_sites_dir.stdout
+
 - name: Configure Apache VirtualHost for {{ site.domain }}
   template:
     src: "vhost.j2"
