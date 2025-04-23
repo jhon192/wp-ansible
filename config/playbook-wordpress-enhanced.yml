@@ -88,11 +88,11 @@
       loop_control:
         loop_var: site
 
-    # - name: Restart Apache after all changes
-    #   service:
-    #     name: apache2
-    #     state: restarted
-    #     enabled: true
+    - name: Restart Apache after all changes
+      service:
+        name: apache2
+        state: restarted
+        enabled: true
 
     - name: Install WP-CLI
       get_url:
