@@ -91,7 +91,7 @@
     - name: Restart Apache after all changes
       service:
         name: apache2
-        state: restarted
+        state: reloaded
         enabled: true
 
     - name: Install WP-CLI
