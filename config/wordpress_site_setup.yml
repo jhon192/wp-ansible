@@ -79,12 +79,12 @@
     group: www-data
     recurse: yes
 
-- name: Ensure safe 0755/0644 perms
+- name: Ensure 0755/0644 perms on {{ site.site_dir }}
   shell: |
     find /home/semaphore/{{ site.linux_user }} -type d -exec chmod 755 {} +
     find /home/semaphore/{{ site.linux_user }} -type f -exec chmod 644 {} +
-  args:
-    warn: false
+  executable: /bin/bash
+  warn: false
 
 - name: Run the WordPress installation
   uri:
