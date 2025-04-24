@@ -18,12 +18,18 @@
 
   tasks:
 
-    - name: Ensure /home/semaphore is root:www-data  (owner=root, group=www-data)
+    - name: Ensure /home/semaphore owned by semaphore and group www-data
       file:
-      path: /home/semaphore
-      owner: root
-      group: www-data
-      state: directory
+        path: /home/semaphore
+        owner: semaphore          # <-- login user keeps write access
+        group: www-data
+        state: directory
+
+    - name: Set /home/semaphore permissions to 0750 (rwx for owner, rx for group)
+      file:
+        path: /home/semaphore
+        mode: '0750'              # owner can write, www-data can traverse
+        state: directory
 
     - name: Disable Apache site {{ site.domain }}
       command: a2dissite {{ site.domain }}
