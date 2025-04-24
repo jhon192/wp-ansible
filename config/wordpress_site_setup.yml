@@ -74,15 +74,15 @@
 
 - name: Fix ownership to www-data
   file:
-    path: "/home/semaphore/{{ site.site_dir }}"
+    path: "/home/semaphore/{{ site.linux_user }}"
     owner: www-data
     group: www-data
     recurse: yes
 
 - name: Ensure safe 0755/0644 perms
   shell: |
-    find /home/semaphore/{{ site.site_dir }} -type d -exec chmod 755 {} +
-    find /home/semaphore/{{ site.site_dir }} -type f -exec chmod 644 {} +
+    find /home/semaphore/{{ site.linux_user }} -type d -exec chmod 755 {} +
+    find /home/semaphore/{{ site.linux_user }} -type f -exec chmod 644 {} +
   args:
     warn: false
 
