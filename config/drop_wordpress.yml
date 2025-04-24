@@ -6,6 +6,7 @@
 
   vars:
     # Re–use the same data structure the original playbooks expect
+    ansible_remote_tmp: "/tmp/.ansible-123324453"
     wordpress_sites:
       - domain: "{{ DOMAIN }}"
         host: "{{ HOST }}"
