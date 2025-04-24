@@ -1,7 +1,7 @@
 - hosts: localhost
   vars:
     ansible_connection: local
-    ansible_remote_tmp: "/tmp/.ansible-{{ ansible_user_id }}"
+    ansible_remote_tmp: "/tmp/.ansible-2323453664"
   tasks:
     - name: Who am I?
       command: whoami
