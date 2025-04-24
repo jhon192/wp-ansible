@@ -67,9 +67,11 @@
     group: root
     mode: "0755"
 
-- name: a2ensite {{ site.domain }}
-  become: true
-  command: a2ensite {{ site.domain }}
+- name: Enable Apache sites
+  command: "a2ensite {{ site.domain }}"
+  args:
+    creates: "/etc/apache2/sites-enabled/{{ site.domain }}.conf"
+  notify: Reload Apache
 
 - name: Fix ownership to www-data
   file:
