@@ -1,5 +1,5 @@
 - name: Robust Multi-Domain WordPress Setup
-  hosts: wordpress
+  hosts: localhost
   become: true
   vars:
     wordpress_sites:
