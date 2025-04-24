@@ -72,9 +72,23 @@
   become: true
   command: a2ensite {{ site.domain }}
 
+- name: Fix ownership to www-data
+  file:
+    path: "/home/semaphore/{{ site.site_dir }}"
+    owner: www-data
+    group: www-data
+    recurse: yes
+
+- name: Ensure safe 0755/0644 perms
+  shell: |
+    find /home/semaphore/{{ site.site_dir }} -type d -exec chmod 755 {} +
+    find /home/semaphore/{{ site.site_dir }} -type f -exec chmod 644 {} +
+  args:
+    warn: false
+
 - name: Run the WordPress installation
   uri:
-    url: "http://{{ site.linux_user }}/wp-admin/install.php?step=2"
+    url: "http://{{ site.domain }}/wp-admin/install.php?step=2"
     method: POST
     body: >
       weblog_title={{ site.website_name }}
