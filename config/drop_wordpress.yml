@@ -18,6 +18,13 @@
 
   tasks:
 
+    - name: Ensure /home/semaphore is root:www-data  (owner=root, group=www-data)
+      file:
+      path: /home/semaphore
+      owner: root
+      group: www-data
+      state: directory
+
     - name: Disable Apache site {{ site.domain }}
       command: a2dissite {{ site.domain }}
       loop: "{{ wordpress_sites }}"
