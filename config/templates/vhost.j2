@@ -4,6 +4,8 @@
 
     DocumentRoot /home/semaphore/{{ site.linux_user }}
 
+    DirectoryIndex index.php index.html home.html
+
     <Directory "/home/semaphore/{{ site.linux_user }}">
         Options Indexes FollowSymLinks
         AllowOverride All
