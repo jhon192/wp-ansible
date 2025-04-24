@@ -78,15 +78,14 @@
     group: www-data
     recurse: true
 
-- name: chmod 755 on directories
-  command: find /home/semaphore/{{ site.linux_user }} -type d -exec chmod 755 {} +
-  args:
-    executable: /bin/bash
-
-- name: chmod 644 on files
-  command: find /home/semaphore/{{ site.linux_user }} -type f -exec chmod 644 {} +
-  args:
-    executable: /bin/bash
+- name: Adjust Permissions in /var/www/html
+  file:
+    path: "/home/semaphore/{{ site.linux_user }}"
+    owner: www-data
+    group: www-data
+    recurse: yes
+    mode: '0755'
+    state: directory
 
 - name: Run the WordPress installation
   uri:
