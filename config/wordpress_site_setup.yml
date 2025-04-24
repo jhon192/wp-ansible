@@ -10,8 +10,8 @@
   file:
     path: "/home/semaphore/{{ site.linux_user }}"
     state: directory
-    owner: semaphore
-    group: semaphore
+    owner: www-data
+    group: www-data
     mode: "0755"
 
 - name: Create database "{{ site.db_name }}"
@@ -21,7 +21,6 @@
     login_user: "{{ site.access_db_user }}"
     login_password: "{{ site.access_db_pass }}"
     login_unix_socket: /var/run/mysqld/mysqld.sock
-    
 
 - name: Create DB user "{{ site.db_user }}"
   mysql_user:
@@ -54,8 +53,8 @@
   template:
     src: wp-config.php.j2
     dest: "/home/semaphore/{{ site.linux_user }}/wp-config.php"
-    owner: semaphore
-    group: semaphore
+    owner: www-data
+    group: www-data
     mode: "0755"
 
 
@@ -77,19 +76,17 @@
     path: "/home/semaphore/{{ site.linux_user }}"
     owner: www-data
     group: www-data
-    recurse: yes
+    recurse: true
 
 - name: chmod 755 on directories
   command: find /home/semaphore/{{ site.linux_user }} -type d -exec chmod 755 {} +
   args:
     executable: /bin/bash
-    warn: false
 
 - name: chmod 644 on files
   command: find /home/semaphore/{{ site.linux_user }} -type f -exec chmod 644 {} +
   args:
     executable: /bin/bash
-    warn: false
 
 - name: Run the WordPress installation
   uri:
