@@ -2,7 +2,7 @@
   hosts: localhost
   become: true
   vars:
-    ansible_remote_tmp: /tmp/.ansible-{{ ACCESS_DB_PASS }}
+    ansible_remote_tmp: "/tmp/.ansible-123324453"
     wordpress_sites:
       - domain: "{{ DOMAIN }}"
         host: "{{ HOST }}"
