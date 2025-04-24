@@ -87,6 +87,19 @@
     mode: '0755'
     state: directory
 
+- name: Ensure /home/semaphore is root:www-data  (owner=root, group=www-data)
+  file:
+    path: /home/semaphore
+    owner: root
+    group: www-data
+    state: directory
+
+- name: Set /home/semaphore permissions to 0750 (rwx for owner, rx for group)
+  file:
+    path: /home/semaphore
+    mode: '0750'
+    state: directory
+
 - name: Run the WordPress installation
   uri:
     url: "http://{{ site.domain }}/wp-admin/install.php?step=2"
