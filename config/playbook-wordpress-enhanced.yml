@@ -2,7 +2,6 @@
   hosts: wordpress
   become: true
   vars:
-    ansible_remote_tmp: /tmp/ansible-{{ ansible_user }}
     wordpress_sites:
       - domain: "{{ DOMAIN }}"
         host: "{{ HOST }}"
