@@ -49,6 +49,21 @@
     #     update_cache: yes
     #     state: present
 
+    - name: Install Apache, PHP, and WP-CLI Dependencies
+      apt:
+        name:
+          - apache2
+          - php
+          - php-mysql
+          - libapache2-mod-php
+          - curl
+          - less
+          - mariadb-server
+          - mariadb-client
+          - python3-mysqldb
+          - unzip
+        state: present
+
     - name: Ensure Apache modules enabled
       apache2_module:
         name: "{{ item }}"
