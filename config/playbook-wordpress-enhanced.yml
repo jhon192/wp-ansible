@@ -1,9 +1,8 @@
----
 - name: Robust Multi-Domain WordPress Setup
-  hosts: localhost
+  hosts: wordpress
   become: true
-  # gather_timeout: 10
   vars:
+    ansible_remote_tmp: /tmp/ansible-{{ ansible_user }}
     wordpress_sites:
       - domain: "{{ DOMAIN }}"
         host: "{{ HOST }}"
@@ -66,6 +65,19 @@
         name: mariadb
         state: started
         enabled: true
+
+    # put these tasks before the first WordPress site is deployed
+    - name: Fix /home/semaphore ownership/perms so both Ansible and Apache work
+      block:
+        - file:
+            path: /home/semaphore
+            owner: semaphore
+            group: www-data
+            state: directory
+        - file:
+            path: /home/semaphore
+            mode: '0750'
+            state: directory
 
     # - name: Configure firewall to allow each site port
     #   ufw:
