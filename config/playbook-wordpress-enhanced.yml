@@ -117,7 +117,7 @@
 
     - name: Install theme via WP-CLI
       command: >
-        wp theme install https://downloads.wordpress.org/theme/astra.4.10.1.zip
+        wp theme install https://downloads.wordpress.org/theme/onepress.2.3.12.zip
         --path=/home/semaphore/{{ site.domain }}
         --allow-root
       args:
@@ -128,7 +128,7 @@
 
     - name: Activate theme via WP-CLI
       command: >
-        wp theme activate astra
+        wp theme activate onepress
         --path=/home/semaphore/{{ site.domain }}
         --allow-root
       args:
