@@ -102,9 +102,12 @@
 #     state: directory
 
 
-- name: wait  5 to 10 s before the installation
-  ansible.builtin.pause:
-    seconds: "{{ range(15, 31) | random }}"   # devuelve 5-10 s
+- name: waiting for the 80 port
+  ansible.builtin.wait_for:
+    host: "{{ site.domain }}"
+    port: 80
+    state: started        # Espera hasta que el puerto responda
+    timeout: 120           # Máx. 1 min
 
 - name: Run the WordPress installation
   ansible.builtin.uri:
@@ -120,5 +123,7 @@
       Content-Type: "application/x-www-form-urlencoded"
     status_code: 200
   register: wordpress_install
-  failed_when: wordpress_install.status != 200
+  until:   wordpress_install.status == 200   # Repite si no es 200
+  retries: 5                                 # Máx. 5 intentos
+  delay:   2                                 # 2 s entre intentos
   ignore_errors: true

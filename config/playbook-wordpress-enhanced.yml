@@ -123,7 +123,7 @@
 
     - name: Install theme via WP-CLI
       command: >
-        wp theme install https://downloads.wordpress.org/theme/oceanwp.4.0.8.zip
+        wp theme install https://downloads.wordpress.org/theme/astra.4.10.1.zip
         --path=/home/semaphore/{{ site.domain }}
         --allow-root
       args:
@@ -134,7 +134,7 @@
 
     - name: Activate theme via WP-CLI
       command: >
-        wp theme activate oceanwp
+        wp theme activate astra
         --path=/home/semaphore/{{ site.domain }}
         --allow-root
       args:
