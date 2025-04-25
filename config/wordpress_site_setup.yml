@@ -102,6 +102,13 @@
 #     state: directory
 
 
+- name: Restart Apache after all changes
+  service:
+    name: apache2
+    state: reloaded
+    enabled: true
+
+
 - name: waiting for the 80 port
   ansible.builtin.wait_for:
     host: "{{ site.domain }}"

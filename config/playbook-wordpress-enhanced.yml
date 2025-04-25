@@ -115,12 +115,6 @@
       loop_control:
         loop_var: site
 
-    - name: Restart Apache after all changes
-      service:
-        name: apache2
-        state: reloaded
-        enabled: true
-
     - name: Install theme via WP-CLI
       command: >
         wp theme install https://downloads.wordpress.org/theme/astra.4.10.1.zip
