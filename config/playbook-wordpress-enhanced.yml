@@ -137,30 +137,28 @@
       loop_control:
         loop_var: site
 
-- name: Create “Home” page via WP-CLI (only if it doesn’t exist)
-  shell: |
-    # ¿Hay ya una página con título “Home”?
-    PAGE_ID=$(wp post list \
-                 --post_type=page \
-                 --title='Home' \
-                 --field=ID \
-                 --path=/home/semaphore/{{ site.domain }} \
-                 --allow-root)
+    - name: Create “Home” page via WP-CLI (only if it doesn’t exist)
+      ansible.builtin.shell: |
+        PAGE_ID=$(wp post list \
+                     --post_type=page \
+                     --title='Home' \
+                     --field=ID \
+                     --path=/home/semaphore/{{ site.domain }} \
+                     --allow-root)
 
-    # Si no existe, la creamos publicada con slug "home"
-    if [ -z "$PAGE_ID" ]; then
-      wp post create \
-        --post_type=page \
-        --post_title='Home' \
-        --post_name='home' \
-        --post_status=publish \
-        --path=/home/semaphore/{{ site.domain }} \
-        --allow-root
-    fi
-  args:
-    chdir: /usr/local/bin          # igual que las tareas anteriores
-  register: home_page_cmd
-  changed_when: "'Success:' in home_page_cmd.stdout"   # Solo marca “changed” si se creó
-  loop: "{{ wordpress_sites }}"
-  loop_control:
-    loop_var: site
+        if [ -z "$PAGE_ID" ]; then
+          wp post create \
+            --post_type=page \
+            --post_title='Home' \
+            --post_name='home' \
+            --post_status=publish \
+            --path=/home/semaphore/{{ site.domain }} \
+            --allow-root
+        fi
+      args:
+        chdir: /usr/local/bin
+      register: home_page_cmd
+      changed_when: "'Success:' in home_page_cmd.stdout"
+      loop: "{{ wordpress_sites }}"
+      loop_control:
+        loop_var: site
