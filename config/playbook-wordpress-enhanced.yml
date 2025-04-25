@@ -124,7 +124,7 @@
     - name: Install theme via WP-CLI
       command: >
         wp theme install https://downloads.wordpress.org/theme/oceanwp.4.0.8.zip
-        --path=/home/semaphore/{{ site.linux_user }}
+        --path=/home/semaphore/{{ site.domain }}
         --allow-root
       args:
         chdir: /usr/local/bin
@@ -135,7 +135,7 @@
     - name: Activate theme via WP-CLI
       command: >
         wp theme activate oceanwp
-        --path=/home/semaphore/{{ site.linux_user }}
+        --path=/home/semaphore/{{ site.domain }}
         --allow-root
       args:
         chdir: /usr/local/bin
