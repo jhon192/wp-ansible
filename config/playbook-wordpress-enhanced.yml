@@ -120,3 +120,19 @@
         name: apache2
         state: reloaded
         enabled: true
+
+    - name: Install theme via WP-CLI
+      command: >
+        wp theme install https://downloads.wordpress.org/theme/oceanwp.4.0.8.zip
+        --path=/var/www/html
+        --allow-root
+      args:
+        chdir: /usr/local/bin
+
+    - name: Activate theme via WP-CLI
+      command: >
+        wp theme activate oceanwp
+        --path=/var/www/html
+        --allow-root
+      args:
+        chdir: /usr/local/bin

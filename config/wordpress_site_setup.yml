@@ -101,6 +101,10 @@
 #     mode: '0750'
 #     state: directory
 
+- name: Wait between 5 and 10 seconds before running WordPress installation
+  pause:
+    seconds: "{{ 5 + (lookup('random', '6') | int) }}"
+
 - name: Run the WordPress installation
   uri:
     url: "http://{{ site.domain }}/wp-admin/install.php?step=2"
