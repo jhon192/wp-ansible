@@ -104,12 +104,12 @@
 - name: Localizar ID del kit “Personal Portfolio”
   shell: >
     wp starter-templates list
-      --search="Personal Portfolio"
-      --type=free                  # solo los gratuitos
-      --page-builder=gutenberg     # usa el editor por defecto
-      --fields=id                  # imprime solo la 1.ª columna
-      --per-page=1                 # primero de la lista
       --allow-root
+      --search="Personal Portfolio"
+      --type=free                  
+      --page-builder=gutenberg     
+      --fields=id                  
+      --per-page=1                 
       --path={{ wp_path }} 
   register: about_id
   changed_when: false
@@ -118,8 +118,8 @@
 - name: Importar la plantilla Personal Portfolio
   when: about_id.stdout | trim | length > 0
   shell: >
-    wp starter-templates import {{ about_id.stdout | trim }} --yes
-    --allow-root --path={{ wp_path }}
+    wp starter-templates import {{ about_id.stdout | trim }} 
+    --allow-root --path={{ wp_path }} --yes
   args:
     executable: /bin/bash
   register: st_import
