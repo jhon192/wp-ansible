@@ -117,7 +117,7 @@
 
     - name: Install theme via WP-CLI
       command: >
-        wp theme install https://downloads.wordpress.org/theme/onepress.2.3.12.zip
+        wp theme install WP-Bootstrap-4 --activate
         --path=/home/semaphore/{{ site.domain }}
         --allow-root
       args:
@@ -127,123 +127,123 @@
         loop_var: site
 
     - name: Activate theme via WP-CLI
-      command: >
-        wp theme activate onepress
-        --path=/home/semaphore/{{ site.domain }}
-        --allow-root
-      args:
-        chdir: /usr/local/bin
-      loop: "{{ wordpress_sites }}"
-      loop_control:
-        loop_var: site
+      # command: >
+      #   wp theme activate onepress
+      #   --path=/home/semaphore/{{ site.domain }}
+      #   --allow-root
+      # args:
+      #   chdir: /usr/local/bin
+      # loop: "{{ wordpress_sites }}"
+      # loop_control:
+      #   loop_var: site
 
-    - name: Ensure “Home” page has OnePress-style starter content
-      ansible.builtin.shell: |
-        # Obtener (o crear si faltara) la página Home y quedarnos con su ID
-        PAGE_ID=$(wp post list \
-                    --post_type=page \
-                    --title='Home' \
-                    --field=ID \
-                    --path=/home/semaphore/{{ site.domain }} \
-                    --allow-root)
+    # - name: Ensure “Home” page has OnePress-style starter content
+    #   ansible.builtin.shell: |
+    #     # Obtener (o crear si faltara) la página Home y quedarnos con su ID
+    #     PAGE_ID=$(wp post list \
+    #                 --post_type=page \
+    #                 --title='Home' \
+    #                 --field=ID \
+    #                 --path=/home/semaphore/{{ site.domain }} \
+    #                 --allow-root)
 
-        if [ -z "$PAGE_ID" ]; then
-          PAGE_ID=$(wp post create \
-                      --post_type=page \
-                      --post_title='Home' \
-                      --post_name='home' \
-                      --post_status=publish \
-                      --porcelain \
-                      --path=/home/semaphore/{{ site.domain }} \
-                      --allow-root)
-        fi
+    #     if [ -z "$PAGE_ID" ]; then
+    #       PAGE_ID=$(wp post create \
+    #                   --post_type=page \
+    #                   --post_title='Home' \
+    #                   --post_name='home' \
+    #                   --post_status=publish \
+    #                   --porcelain \
+    #                   --path=/home/semaphore/{{ site.domain }} \
+    #                   --allow-root)
+    #     fi
 
-        ##################################################################
-        # Contenido HTML sencillo que encaja con las secciones por defecto
-        # del tema OnePress. Modifícalo a tu gusto.
-        ##################################################################
-        read -r -d '' CONTENT <<'EOF'
-        <!-- wp:cover {"overlayColor":"primary","minHeight":70,"align":"full"} -->
-        <div class="wp-block-cover alignfull" style="min-height:70vh"><span aria-hidden="true" class="wp-block-cover__background has-primary-background-color has-background-dim"></span><div class="wp-block-cover__inner-container"><!-- wp:heading {"textAlign":"center","level":1,"textColor":"white"} -->
-        <h1 class="has-text-align-center has-white-color has-text-color">Bienvenido a {{ site.domain }}</h1>
-        <!-- /wp:heading -->
+    #     ##################################################################
+    #     # Contenido HTML sencillo que encaja con las secciones por defecto
+    #     # del tema OnePress. Modifícalo a tu gusto.
+    #     ##################################################################
+    #     read -r -d '' CONTENT <<'EOF'
+    #     <!-- wp:cover {"overlayColor":"primary","minHeight":70,"align":"full"} -->
+    #     <div class="wp-block-cover alignfull" style="min-height:70vh"><span aria-hidden="true" class="wp-block-cover__background has-primary-background-color has-background-dim"></span><div class="wp-block-cover__inner-container"><!-- wp:heading {"textAlign":"center","level":1,"textColor":"white"} -->
+    #     <h1 class="has-text-align-center has-white-color has-text-color">Bienvenido a {{ site.domain }}</h1>
+    #     <!-- /wp:heading -->
 
-        <!-- wp:buttons {"layout":{"type":"flex","justifyContent":"center"}} -->
-        <div class="wp-block-buttons"><!-- wp:button {"textColor":"primary","style":{"gradient":"linear-gradient(90deg,rgb(255,255,255) 0%,rgb(244,244,244) 100%)"}} -->
-        <div class="wp-block-button"><a class="wp-block-button__link has-primary-color has-text-color has-background" href="#services">Nuestros servicios</a></div>
-        <!-- /wp:button --></div>
-        <!-- /wp:buttons --></div></div>
-        <!-- /wp:cover -->
+    #     <!-- wp:buttons {"layout":{"type":"flex","justifyContent":"center"}} -->
+    #     <div class="wp-block-buttons"><!-- wp:button {"textColor":"primary","style":{"gradient":"linear-gradient(90deg,rgb(255,255,255) 0%,rgb(244,244,244) 100%)"}} -->
+    #     <div class="wp-block-button"><a class="wp-block-button__link has-primary-color has-text-color has-background" href="#services">Nuestros servicios</a></div>
+    #     <!-- /wp:button --></div>
+    #     <!-- /wp:buttons --></div></div>
+    #     <!-- /wp:cover -->
 
-        <!-- wp:heading {"level":2,"align":"center"} -->
-        <h2 class="has-text-align-center" id="services">Servicios destacados</h2>
-        <!-- /wp:heading -->
+    #     <!-- wp:heading {"level":2,"align":"center"} -->
+    #     <h2 class="has-text-align-center" id="services">Servicios destacados</h2>
+    #     <!-- /wp:heading -->
 
-        <!-- wp:columns {"align":"wide"} -->
-        <div class="wp-block-columns alignwide">
-          <!-- wp:column -->
-          <div class="wp-block-column"><!-- wp:image {"id":123,"sizeSlug":"large"} /--><!-- wp:heading {"textAlign":"center","level":3} --><h3 class="has-text-align-center">Diseño web</h3><!-- /wp:heading --></div>
-          <!-- /wp:column -->
-          <!-- wp:column -->
-          <div class="wp-block-column"><!-- wp:image {"id":124,"sizeSlug":"large"} /--><!-- wp:heading {"textAlign":"center","level":3} --><h3 class="has-text-align-center">SEO</h3><!-- /wp:heading --></div>
-          <!-- /wp:column -->
-          <!-- wp:column -->
-          <div class="wp-block-column"><!-- wp:image {"id":125,"sizeSlug":"large"} /--><!-- wp:heading {"textAlign":"center","level":3} --><h3 class="has-text-align-center">e-Commerce</h3><!-- /wp:heading --></div>
-          <!-- /wp:column -->
-        </div>
-        <!-- /wp:columns -->
+    #     <!-- wp:columns {"align":"wide"} -->
+    #     <div class="wp-block-columns alignwide">
+    #       <!-- wp:column -->
+    #       <div class="wp-block-column"><!-- wp:image {"id":123,"sizeSlug":"large"} /--><!-- wp:heading {"textAlign":"center","level":3} --><h3 class="has-text-align-center">Diseño web</h3><!-- /wp:heading --></div>
+    #       <!-- /wp:column -->
+    #       <!-- wp:column -->
+    #       <div class="wp-block-column"><!-- wp:image {"id":124,"sizeSlug":"large"} /--><!-- wp:heading {"textAlign":"center","level":3} --><h3 class="has-text-align-center">SEO</h3><!-- /wp:heading --></div>
+    #       <!-- /wp:column -->
+    #       <!-- wp:column -->
+    #       <div class="wp-block-column"><!-- wp:image {"id":125,"sizeSlug":"large"} /--><!-- wp:heading {"textAlign":"center","level":3} --><h3 class="has-text-align-center">e-Commerce</h3><!-- /wp:heading --></div>
+    #       <!-- /wp:column -->
+    #     </div>
+    #     <!-- /wp:columns -->
 
-        <!-- wp:paragraph {"align":"center"} -->
-        <p class="has-text-align-center">OnePress es un tema de una sola página perfecto para tu negocio o portafolio.</p>
-        <!-- /wp:paragraph -->
-        EOF
+    #     <!-- wp:paragraph {"align":"center"} -->
+    #     <p class="has-text-align-center">OnePress es un tema de una sola página perfecto para tu negocio o portafolio.</p>
+    #     <!-- /wp:paragraph -->
+    #     EOF
 
-        ##################################################################
-        # Compara el contenido actual con el deseado.
-        ##################################################################
-        CURRENT_HASH=$(wp post get "$PAGE_ID" --field=post_content --path=/home/semaphore/{{ site.domain }} --allow-root | sha1sum | cut -d' ' -f1)
-        NEW_HASH=$(echo "$CONTENT" | sha1sum | cut -d' ' -f1)
+    #     ##################################################################
+    #     # Compara el contenido actual con el deseado.
+    #     ##################################################################
+    #     CURRENT_HASH=$(wp post get "$PAGE_ID" --field=post_content --path=/home/semaphore/{{ site.domain }} --allow-root | sha1sum | cut -d' ' -f1)
+    #     NEW_HASH=$(echo "$CONTENT" | sha1sum | cut -d' ' -f1)
 
-        if [ "$CURRENT_HASH" != "$NEW_HASH" ]; then
-          # Actualiza solo si ha cambiado (idempotente)
-          wp post update "$PAGE_ID" \
-            --post_content="$CONTENT" \
-            --path=/home/semaphore/{{ site.domain }} \
-            --allow-root
-          echo "Success: Updated page $PAGE_ID"
-        fi
-      args:
-        chdir: /usr/local/bin
-      register: home_content_cmd
-      changed_when: "'Success: Updated page' in home_content_cmd.stdout"
-      loop: "{{ wordpress_sites }}"
-      loop_control:
-        loop_var: site
+    #     if [ "$CURRENT_HASH" != "$NEW_HASH" ]; then
+    #       # Actualiza solo si ha cambiado (idempotente)
+    #       wp post update "$PAGE_ID" \
+    #         --post_content="$CONTENT" \
+    #         --path=/home/semaphore/{{ site.domain }} \
+    #         --allow-root
+    #       echo "Success: Updated page $PAGE_ID"
+    #     fi
+    #   args:
+    #     chdir: /usr/local/bin
+    #   register: home_content_cmd
+    #   changed_when: "'Success: Updated page' in home_content_cmd.stdout"
+    #   loop: "{{ wordpress_sites }}"
+    #   loop_control:
+    #     loop_var: site
 
-    #######################################################################
-    # 4) Designar la página Home como portada estática
-    #######################################################################
-    - name: Set static front page to “Home”
-      ansible.builtin.shell: |
-        PAGE_ID=$(wp post list \
-                    --post_type=page \
-                    --title='Home' \
-                    --field=ID \
-                    --path=/home/semaphore/{{ site.domain }} \
-                    --allow-root)
+    # #######################################################################
+    # # 4) Designar la página Home como portada estática
+    # #######################################################################
+    # - name: Set static front page to “Home”
+    #   ansible.builtin.shell: |
+    #     PAGE_ID=$(wp post list \
+    #                 --post_type=page \
+    #                 --title='Home' \
+    #                 --field=ID \
+    #                 --path=/home/semaphore/{{ site.domain }} \
+    #                 --allow-root)
 
-        # Asegurarse de que el sitio usa “página estática” y que Home es la portada
-        CURRENT_FRONT=$(wp option get page_on_front --path=/home/semaphore/{{ site.domain }} --allow-root || echo 0)
+    #     # Asegurarse de que el sitio usa “página estática” y que Home es la portada
+    #     CURRENT_FRONT=$(wp option get page_on_front --path=/home/semaphore/{{ site.domain }} --allow-root || echo 0)
 
-        if [ "$PAGE_ID" != "$CURRENT_FRONT" ]; then
-          wp option update show_on_front page --path=/home/semaphore/{{ site.domain }} --allow-root
-          wp option update page_on_front  "$PAGE_ID" --path=/home/semaphore/{{ site.domain }} --allow-root
-          echo "Success: Front page set to Home ($PAGE_ID)"
-        fi
-      args:
-        chdir: /usr/local/bin
-      register: front_page_cmd
-      changed_when: "'Success: Front page set to Home' in front_page_cmd.stdout"
-      loop: "{{ wordpress_sites }}"
-      loop_control:
-        loop_var: site
+    #     if [ "$PAGE_ID" != "$CURRENT_FRONT" ]; then
+    #       wp option update show_on_front page --path=/home/semaphore/{{ site.domain }} --allow-root
+    #       wp option update page_on_front  "$PAGE_ID" --path=/home/semaphore/{{ site.domain }} --allow-root
+    #       echo "Success: Front page set to Home ($PAGE_ID)"
+    #     fi
+    #   args:
+    #     chdir: /usr/local/bin
+    #   register: front_page_cmd
+    #   changed_when: "'Success: Front page set to Home' in front_page_cmd.stdout"
+    #   loop: "{{ wordpress_sites }}"
+    #   loop_control:
+    #     loop_var: site
