@@ -23,17 +23,17 @@
 # ─── THEME ───────────────────────────────────────────────────── #
 - name: Install & activate {{ theme_slug }} for {{ site.domain }}
   shell: |
-    wp theme is-installed {{ theme_slug }} --path={{ wp_path }} \
-    || wp theme install {{ theme_slug }} --activate --path={{ wp_path }}
+    wp theme is-installed {{ theme_slug }} --allow-root --path={{ wp_path }} \
+    || wp theme install {{ theme_slug }} --activate --allow-root --path={{ wp_path }}
   args: { executable: /bin/bash }
 
 # ─── STARTER PAGES ───────────────────────────────────────────── #
 - name: Ensure starter pages exist ({{ site.domain }})
   shell: |
     slug=$(echo "{{ item }}" | tr '[:upper:]' '[:lower:]' | tr ' ' '-') &&
-    wp post list --post_type=page --field=ID --name=$slug --path={{ wp_path }} | head -n1 \
+    wp post list --post_type=page --field=ID --name=$slug --allow-root --path={{ wp_path }} | head -n1 \
     || wp post create --post_type=page --post_title='{{ item }}' --post_status=publish \
-       --porcelain --path={{ wp_path }}
+       --porcelain --allow-root --path={{ wp_path }}
   loop: "{{ starter_pages }}"
   register: page_create
   changed_when: "'Created' in page_create.stdout"
@@ -41,14 +41,14 @@
 # ─── STATIC FRONT PAGE (Home) ────────────────────────────────── #
 - name: Get Home page ID
   shell: >
-    wp post list --post_type=page --field=ID --name=home --path={{ wp_path }} | head -n1
+    wp post list --post_type=page --field=ID --name=home --allow-root --path={{ wp_path }} | head -n1
   register: home_id_raw
   changed_when: false
 
 - name: Set Home as the front page
   shell: >
-    wp option update show_on_front page --path={{ wp_path }} &&
-    wp option update page_on_front {{ home_id_raw.stdout | trim }} --path={{ wp_path }}
+    wp option update show_on_front page --allow-root --path={{ wp_path }} &&
+    wp option update page_on_front {{ home_id_raw.stdout | trim }} --allow-root --path={{ wp_path }}
 
 # ─── PLUGINS ─────────────────────────────────────────────────── #
 - name: Ensure plugins present / up-to-date
@@ -56,7 +56,7 @@
     wp plugin install {{ item.slug }}
     {% if item.state == 'latest' %} --force {% endif %}
     {%- if item.activate %} --activate {% endif %}
-    --path={{ wp_path }}
+    --allow-root --path={{ wp_path }}
   loop: "{{ plugins }}"
   loop_control: { label: "{{ item.slug }}" }
   register: plug
@@ -67,14 +67,14 @@
   shell: |
     test -f {{ wp_path }}/wp-content/themes/{{ theme_slug }}/inc/demo-content.json &&
     wp ocdi import {{ wp_path }}/wp-content/themes/{{ theme_slug }}/inc/demo-content.json \
-       --path={{ wp_path }} || true
+       --allow-root --path={{ wp_path }} || true
   args: { executable: /bin/bash }
 
 # ─── MAIN MENU ───────────────────────────────────────────────── #
 - name: Ensure “Main” menu exists
   shell: |
-    wp menu list --format=ids --name="Main" --path={{ wp_path }} | head -n1 \
-    || wp menu create "Main" --porcelain --path={{ wp_path }}
+    wp menu list --format=ids --name="Main" --allow-root --path={{ wp_path }} | head -n1 \
+    || wp menu create "Main" --porcelain --allow-root --path={{ wp_path }}
   register: menu_id_raw
   changed_when: "'Created' in menu_id_raw.stdout"
 
@@ -85,16 +85,16 @@
 
 - name: Add pages to Main menu
   shell: |
-    PAGE_ID=$(wp post list --post_type=page --field=ID --name={{ item.key }} --path={{ wp_path }} | head -n1) &&
+    PAGE_ID=$(wp post list --post_type=page --field=ID --name={{ item.key }} --allow-root --path={{ wp_path }} | head -n1) &&
     wp menu item add-post {{ menu_id }} $PAGE_ID --title='{{ item.value }}' \
-      --path={{ wp_path }} 2>/dev/null || true
+      --allow-root --path={{ wp_path }} 2>/dev/null || true
   loop: "{{ menu_items | dict2items }}"
   loop_control: { label: "{{ item.value }}" }
   args: { executable: /bin/bash }
 
 # ─── PRETTY PERMALINKS ───────────────────────────────────────── #
 - name: Pretty permalinks (/%postname%/)
-  shell: wp rewrite structure '/%postname%/' --path={{ wp_path }}
+  shell: wp rewrite structure '/%postname%/' --allow-root --path={{ wp_path }}
   register: perm
   changed_when: "'Success' in perm.stdout"
 
@@ -103,7 +103,7 @@
   when: child_theme
   shell: >
     wp scaffold child-theme "{{ theme_slug }}-child" --parent_theme={{ theme_slug }}
-    --path={{ wp_path }} --activate
+    --allow-root --path={{ wp_path }} --activate
   args:
     creates: "{{ wp_path }}/wp-content/themes/{{ theme_slug }}-child/style.css"
 
@@ -118,7 +118,7 @@
 
 # ─── FLUSH REWRITE RULES ─────────────────────────────────────── #
 - name: Flush rewrite rules
-  shell: wp rewrite flush --hard --path={{ wp_path }}
+  shell: wp rewrite flush --hard --allow-root --path={{ wp_path }}
 
 # ─── SMOKE-TEST ──────────────────────────────────────────────── #
 - name: Verify home page returns 200 ({{ site.domain }})
