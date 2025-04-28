@@ -180,6 +180,7 @@
   shell: |
     wp starter-templates import 68423 --allow-root \
     --path={{ wp_path }} \ 
+    --debug \
     --yes
   register: st_import
   changed_when: "'Import complete' in st_import.stdout or 'Started import' in st_import.stdout"
