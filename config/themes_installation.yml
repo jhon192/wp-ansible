@@ -100,28 +100,25 @@
 ########################################################################
 #  IMPORTAR kit “Personal Portfolio” (About-Me)                        #
 ########################################################################
-# 1 ▸ Obtener el ID buscando por título
 - name: Localizar ID del kit “Personal Portfolio”
-  shell: >
-    wp starter-templates list
-      --allow-root
-      --search="Personal Portfolio"
-      --type=free                  
-      --page-builder=gutenberg     
-      --fields=id                  
-      --per-page=1                 
-      --path={{ wp_path }} 
+  shell: |
+    wp starter-templates list \
+      --allow-root \
+      --search="Personal Portfolio" \
+      --type=free \
+      --page-builder=gutenberg \
+      --fields=id \
+      --per-page=1 \
+      --path={{ wp_path }}
   register: about_id
   changed_when: false
 
-# 2 ▸ Importar ese kit (si lo encontró)
-- name: Importar la plantilla Personal Portfolio
+- name: Importar plantilla Personal Portfolio
   when: about_id.stdout | trim | length > 0
-  shell: >
-    wp starter-templates import {{ about_id.stdout | trim }} 
-    --allow-root --path={{ wp_path }} --yes
-  args:
-    executable: /bin/bash
+  shell: |
+    wp starter-templates import {{ about_id.stdout | trim }} --allow-root \
+    --yes \
+    --path={{ wp_path }}
   register: st_import
   changed_when: "'Import complete' in st_import.stdout or 'Started import' in st_import.stdout"
 
