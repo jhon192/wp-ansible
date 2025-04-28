@@ -51,28 +51,50 @@
       --porcelain
       --path={{ wp_path }}
       --allow-root
-  register: home_create              # ← ID numérico recién creado
-  changed_when: true                 # siempre marca “changed”
+  register: home_create # ← ID numérico recién creado
+  changed_when: true # siempre marca “changed”
   args:
     chdir: /usr/local/bin
 
-###############################################################################
-# 2 ▸ Definir Home como portada *solo si no lo está*                          #
-###############################################################################
-- name: Definir Home como portada (solo si cambia)
-  shell: |
-    CURRENT_FRONT=$(wp option get page_on_front --path={{ wp_path }} --allow-root 2>/dev/null || echo 0)
+# ###############################################################################
+# # 2 ▸ Definir Home como portada *solo si no lo está*                          #
+# ###############################################################################
+# - name: Definir Home como portada (solo si cambia)
+#   shell: |
+#     CURRENT_FRONT=$(wp option get page_on_front --path={{ wp_path }} --allow-root 2>/dev/null || echo 0)
 
-    if [ "{{ home_create.stdout | trim }}" != "$CURRENT_FRONT" ]; then
-      wp option update show_on_front page --path={{ wp_path }} --allow-root --quiet
-      wp option update page_on_front {{ home_create.stdout | trim }} --path={{ wp_path }} --allow-root --quiet
-      echo "Success: Front page set to Home ({{ home_create.stdout | trim }})"
-    fi
+#     if [ "{{ home_create.stdout | trim }}" != "$CURRENT_FRONT" ]; then
+#       wp option update show_on_front page --path={{ wp_path }} --allow-root --quiet
+#       wp option update page_on_front {{ home_create.stdout | trim }} --path={{ wp_path }} --allow-root --quiet
+#       echo "Success: Front page set to Home ({{ home_create.stdout | trim }})"
+#     fi
+#   args:
+#     executable: /bin/bash
+#     chdir: /usr/local/bin
+#   register: front_page_cmd
+#   changed_when: "'Success: Front page set to Home' in front_page_cmd.stdout"
+
+########################################################################
+#  Starter Templates (plugin + import)                                 #
+########################################################################
+- name: Instalar y activar plugin Starter Templates
+  shell: >
+    wp plugin install starter-templates --activate
+    --path={{ wp_path }} --quiet --allow-root
   args:
     executable: /bin/bash
-    chdir: /usr/local/bin
-  register: front_page_cmd
-  changed_when: "'Success: Front page set to Home' in front_page_cmd.stdout"
+  register: st_plugin
+  changed_when: "'Downloading' in st_plugin.stdout or 'Activating' in st_plugin.stdout"
+
+- name: Importar plantilla pre-construida (si se definió)
+  when: site.starter_template_id is defined
+  shell: >
+    wp starter-templates import {{ site.starter_template_id }} --yes
+    --path={{ wp_path }} --allow-root
+  args:
+    executable: /bin/bash
+  register: st_import
+  changed_when: "'Import complete' in st_import.stdout or 'Started import' in st_import.stdout"
 
 # ─── PLUGINS ─────────────────────────────────────────────────── #
 - name: Ensure plugins present / up-to-date
@@ -137,7 +159,7 @@
     src: "templates/{{ item }}"
     dest: "{{ wp_path }}/wp-content/themes/{{ theme_slug }}-child/{{ item }}"
     owner: "{{ linux_owner }}"
-    mode: '0644'
+    mode: "0644"
   loop: "{{ custom_templates }}"
 
 # ─── FLUSH REWRITE RULES ─────────────────────────────────────── #
