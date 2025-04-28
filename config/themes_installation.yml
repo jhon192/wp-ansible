@@ -97,6 +97,37 @@
   changed_when: "'Import complete' in st_import.stdout or 'Started import' in st_import.stdout"
 
 
+########################################################################
+#  IMPORTAR kit “Personal Portfolio” (About-Me)                        #
+########################################################################
+# 1 ▸ Obtener el ID buscando por título
+- name: Localizar ID del kit “Personal Portfolio”
+  shell: >
+    wp starter-templates list
+      --search="Personal Portfolio"
+      --type=free                  # solo los gratuitos
+      --page-builder=gutenberg     # usa el editor por defecto
+      --fields=id                  # imprime solo la 1.ª columna
+      --per-page=1                 # primero de la lista
+      --allow-root
+      --path={{ wp_path }} 
+  register: about_id
+  changed_when: false
+  become_user: "{{ linux_owner }}"
+
+# 2 ▸ Importar ese kit (si lo encontró)
+- name: Importar la plantilla Personal Portfolio
+  when: about_id.stdout | trim | length > 0
+  shell: >
+    wp starter-templates import {{ about_id.stdout | trim }} --yes
+    --allow-root  --path={{ wp_path }}
+  args:
+    executable: /bin/bash
+  register: st_import
+  changed_when: "'Import complete' in st_import.stdout or 'Started import' in st_import.stdout"
+  become_user: "{{ linux_owner }}"
+
+
 # ─── PLUGINS ─────────────────────────────────────────────────── #
 - name: Ensure plugins present / up-to-date
   shell: >
