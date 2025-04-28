@@ -42,19 +42,19 @@
 ###############################################################################
 # 1 ▸ Crear SIEMPRE la página “Home” y quedarnos con su ID                    #
 ###############################################################################
-- name: Crear la página Home (porcelana devuelve solo el ID)
-  command: >
-    wp post create
-      --post_type=page
-      --post_title='Home'
-      --post_status=publish
-      --porcelain
-      --path={{ wp_path }}
-      --allow-root
-  register: home_create # ← ID numérico recién creado
-  changed_when: true # siempre marca “changed”
-  args:
-    chdir: /usr/local/bin
+# - name: Crear la página Home (porcelana devuelve solo el ID)
+#   command: >
+#     wp post create
+#       --post_type=page
+#       --post_title='Home'
+#       --post_status=publish
+#       --porcelain
+#       --path={{ wp_path }}
+#       --allow-root
+#   register: home_create # ← ID numérico recién creado
+#   changed_when: true # siempre marca “changed”
+#   args:
+#     chdir: /usr/local/bin
 
 # ###############################################################################
 # # 2 ▸ Definir Home como portada *solo si no lo está*                          #
@@ -77,24 +77,25 @@
 ########################################################################
 #  Starter Templates (plugin + import)                                 #
 ########################################################################
-- name: Instalar y activar plugin Starter Templates
+- name: Instalar y activar Starter Templates
   shell: >
-    wp plugin install starter-templates --activate
-    --path={{ wp_path }} --quiet --allow-root
+    wp plugin install astra-sites --activate
+      --path={{ wp_path }} --allow-root --quiet
   args:
     executable: /bin/bash
   register: st_plugin
-  changed_when: "'Downloading' in st_plugin.stdout or 'Activating' in st_plugin.stdout"
+  changed_when: "'Installing' in st_plugin.stdout or 'Downloading' in st_plugin.stdout"
 
 - name: Importar plantilla pre-construida (si se definió)
   when: site.starter_template_id is defined
   shell: >
     wp starter-templates import {{ site.starter_template_id }} --yes
-    --path={{ wp_path }} --allow-root
+      --path={{ wp_path }} --allow-root
   args:
     executable: /bin/bash
   register: st_import
   changed_when: "'Import complete' in st_import.stdout or 'Started import' in st_import.stdout"
+
 
 # ─── PLUGINS ─────────────────────────────────────────────────── #
 - name: Ensure plugins present / up-to-date
