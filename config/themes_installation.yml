@@ -7,7 +7,7 @@
 # ─── Local convenience vars ─────────────────────────────────── #
 - name: Definir variables locales del sitio
   set_fact:
-    wp_path: "/var/www/{{ site.domain }}"
+    wp_path: "/home/semaphore/{{ site.domain }}"
     linux_owner: "{{ site.linux_user | default('www-data') }}"
 
 # # ─── Ensure doc-root exists & correct owner ‐ optional ───────── #
