@@ -80,7 +80,7 @@
 - name: Instalar y activar Starter Templates
   shell: >
     wp plugin install astra-sites --activate
-      --path={{ wp_path }} --allow-root --quiet
+    --allow-root --path={{ wp_path }} --quiet
   args:
     executable: /bin/bash
   register: st_plugin
@@ -90,7 +90,7 @@
   when: site.starter_template_id is defined
   shell: >
     wp starter-templates import {{ site.starter_template_id }} --yes
-      --path={{ wp_path }} --allow-root
+     --allow-root --path={{ wp_path }}
   args:
     executable: /bin/bash
   register: st_import
