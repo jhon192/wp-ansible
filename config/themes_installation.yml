@@ -100,6 +100,7 @@
 ########################################################################
 #  IMPORTAR kit “Personal Portfolio” (About-Me)                        #
 ########################################################################
+# 1 ▸ Obtener el ID (formato “ids”)
 - name: Localizar ID del kit “Personal Portfolio”
   shell: |
     wp starter-templates list \
@@ -107,18 +108,19 @@
       --search="Personal Portfolio" \
       --type=free \
       --page-builder=gutenberg \
-      --fields=id \
-      --per-page=1 \
-      --path={{ wp_path }}
+      --format=ids \
+      --path={{ wp_path }} | head -n1
   register: about_id
   changed_when: false
 
+# 2 ▸ Importar el kit con ese ID
 - name: Importar plantilla Personal Portfolio
   when: about_id.stdout | trim | length > 0
   shell: |
-    wp starter-templates import {{ about_id.stdout | trim }} --allow-root \
-    --yes \
-    --path={{ wp_path }}
+    wp starter-templates import {{ about_id.stdout | trim }} \
+    --allow-root \
+    --path={{ wp_path }} \ 
+     --yes
   register: st_import
   changed_when: "'Import complete' in st_import.stdout or 'Started import' in st_import.stdout"
 
