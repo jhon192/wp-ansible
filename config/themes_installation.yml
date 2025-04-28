@@ -97,18 +97,6 @@
 #   changed_when: "'Import complete' in st_import.stdout or 'Started import' in st_import.stdout"
 
 
-########################################################################
-#  IMPORTAR kit “Personal Portfolio” (About-Me)                        #
-########################################################################
-- name: Importar plantilla Personal Portfolio
-  shell: |
-    wp starter-templates import 68423 --allow-root \
-    --path={{ wp_path }} \ 
-    --yes
-  register: st_import
-  changed_when: "'Import complete' in st_import.stdout or 'Started import' in st_import.stdout"
-  ignore_errors: true
-
 # ─── PLUGINS ─────────────────────────────────────────────────── #
 - name: Ensure plugins present / up-to-date
   shell: >
@@ -184,3 +172,15 @@
   uri:
     url: "http://{{ site.host | default(site.domain) }}/"
     status_code: 200
+
+  ########################################################################
+#  IMPORTAR kit “Personal Portfolio” (About-Me)                        #
+########################################################################
+- name: Importar plantilla Personal Portfolio
+  shell: |
+    wp starter-templates import 68423 --allow-root \
+    --path={{ wp_path }} \ 
+    --yes
+  register: st_import
+  changed_when: "'Import complete' in st_import.stdout or 'Started import' in st_import.stdout"
+  ignore_errors: true
