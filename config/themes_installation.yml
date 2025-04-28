@@ -52,8 +52,8 @@
 
 - name: Definir Home como portada *solo si cambia*
   shell: |
-    wp option update show_on_front page --path={{ wp_path }} --quiet
-    wp option update page_on_front {{ home_id_raw.stdout | trim }} --path={{ wp_path }} --quiet
+    wp option update show_on_front page --allow-root --path={{ wp_path }} --quiet
+    wp option update page_on_front {{ home_id_raw.stdout | trim }} --allow-root --path={{ wp_path }} --quiet
   when: front_opt.stdout | trim != (home_id_raw.stdout | trim)
 
 # ─── PLUGINS ─────────────────────────────────────────────────── #
