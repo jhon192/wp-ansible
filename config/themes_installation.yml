@@ -39,16 +39,22 @@
   changed_when: "'Created' in page_create.stdout"
 
 # ─── STATIC FRONT PAGE (Home) ────────────────────────────────── #
-- name: Get Home page ID
+- name: Obtener ID de la Home (slug=home)
   shell: >
     wp post list --post_type=page --field=ID --name=home --allow-root --path={{ wp_path }} | head -n1
   register: home_id_raw
   changed_when: false
 
-- name: Set Home as the front page
-  shell: >
-    wp option update show_on_front page --allow-root --path={{ wp_path }} &&
-    wp option update page_on_front {{ home_id_raw.stdout | trim }} --allow-root --path={{ wp_path }}
+- name: Obtener front-page actual
+  shell: wp option get page_on_front --allow-root --path={{ wp_path }}
+  register: front_opt
+  changed_when: false
+
+- name: Definir Home como portada *solo si cambia*
+  shell: |
+    wp option update show_on_front page --path={{ wp_path }} --quiet
+    wp option update page_on_front {{ home_id_raw.stdout | trim }} --path={{ wp_path }} --quiet
+  when: front_opt.stdout | trim != (home_id_raw.stdout | trim)
 
 # ─── PLUGINS ─────────────────────────────────────────────────── #
 - name: Ensure plugins present / up-to-date
