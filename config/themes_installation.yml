@@ -86,15 +86,15 @@
   register: st_plugin
   changed_when: "'Installing' in st_plugin.stdout or 'Downloading' in st_plugin.stdout"
 
-- name: Importar plantilla pre-construida (si se definió)
-  when: site.starter_template_id is defined
-  shell: >
-    wp starter-templates import {{ site.starter_template_id }} --yes
-     --allow-root --path={{ wp_path }}
-  args:
-    executable: /bin/bash
-  register: st_import
-  changed_when: "'Import complete' in st_import.stdout or 'Started import' in st_import.stdout"
+# - name: Importar plantilla pre-construida (si se definió)
+#   when: site.starter_template_id is defined
+#   shell: >
+#     wp starter-templates import {{ site.starter_template_id }} --yes
+#      --allow-root --path={{ wp_path }}
+#   args:
+#     executable: /bin/bash
+#   register: st_import
+#   changed_when: "'Import complete' in st_import.stdout or 'Started import' in st_import.stdout"
 
 
 ########################################################################
@@ -102,7 +102,7 @@
 ########################################################################
 - name: Importar plantilla Personal Portfolio
   shell: |
-    wp starter-templates import 59219 --allow-root \
+    wp starter-templates import 68423 --allow-root \
     --path={{ wp_path }} \ 
     --yes
   register: st_import
