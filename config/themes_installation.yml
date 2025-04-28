@@ -10,13 +10,13 @@
     wp_path: "/var/www/{{ site.domain }}"
     linux_owner: "{{ site.linux_user | default('www-data') }}"
 
-# ─── Ensure doc-root exists & correct owner ‐ optional ───────── #
-- name: Ensure {{ wp_path }} exists
-  file:
-    path: "{{ wp_path }}"
-    state: directory
-    owner: "{{ linux_owner }}"
-    mode: "0755"
+# # ─── Ensure doc-root exists & correct owner ‐ optional ───────── #
+# - name: Ensure {{ wp_path }} exists
+#   file:
+#     path: "{{ wp_path }}"
+#     state: directory
+#     owner: "{{ linux_owner }}"
+#     mode: "0755"
 
 # (Assumption: core download / config / install already done earlier.)
 
