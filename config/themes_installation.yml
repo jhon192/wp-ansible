@@ -39,25 +39,40 @@
   changed_when: "'Created' in page_create.stdout"
 
 # ─── STATIC FRONT PAGE (Home) ────────────────────────────────── #
-# ─── Crear SIEMPRE la página Home y capturar su ID ──────────────
-- name: Crear la página Home por defecto
+###############################################################################
+# 1 ▸ Crear SIEMPRE la página “Home” y quedarnos con su ID                    #
+###############################################################################
+- name: Crear la página Home (porcelana devuelve solo el ID)
   command: >
     wp post create
       --post_type=page
       --post_title='Home'
       --post_status=publish
       --porcelain
-      --allow-root                  
       --path={{ wp_path }}
-  register: home_create
-  changed_when: true               # siempre marca “changed”
+      --allow-root
+  register: home_create              # ← ID numérico recién creado
+  changed_when: true                 # siempre marca “changed”
+  args:
+    chdir: /usr/local/bin
 
-# ─── Definir Home como portada usando ese ID ────────────────────
-- name: Definir Home como portada
+###############################################################################
+# 2 ▸ Definir Home como portada *solo si no lo está*                          #
+###############################################################################
+- name: Definir Home como portada (solo si cambia)
   shell: |
-    wp option update show_on_front page --path={{ wp_path }} --quiet
-    wp option update page_on_front {{ home_create.stdout | trim }} \
-      --allow-root  --path={{ wp_path }} --quiet
+    CURRENT_FRONT=$(wp option get page_on_front --path={{ wp_path }} --allow-root 2>/dev/null || echo 0)
+
+    if [ "{{ home_create.stdout | trim }}" != "$CURRENT_FRONT" ]; then
+      wp option update show_on_front page --path={{ wp_path }} --allow-root --quiet
+      wp option update page_on_front {{ home_create.stdout | trim }} --path={{ wp_path }} --allow-root --quiet
+      echo "Success: Front page set to Home ({{ home_create.stdout | trim }})"
+    fi
+  args:
+    executable: /bin/bash
+    chdir: /usr/local/bin
+  register: front_page_cmd
+  changed_when: "'Success: Front page set to Home' in front_page_cmd.stdout"
 
 # ─── PLUGINS ─────────────────────────────────────────────────── #
 - name: Ensure plugins present / up-to-date
