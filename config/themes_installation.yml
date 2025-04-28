@@ -119,7 +119,7 @@
   when: about_id.stdout | trim | length > 0
   shell: >
     wp starter-templates import {{ about_id.stdout | trim }} --yes
-    --allow-root  --path={{ wp_path }}
+    --allow-root --path={{ wp_path }}
   args:
     executable: /bin/bash
   register: st_import
