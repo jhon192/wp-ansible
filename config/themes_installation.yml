@@ -113,7 +113,6 @@
       --path={{ wp_path }} 
   register: about_id
   changed_when: false
-  become_user: "{{ linux_owner }}"
 
 # 2 ▸ Importar ese kit (si lo encontró)
 - name: Importar la plantilla Personal Portfolio
@@ -125,7 +124,6 @@
     executable: /bin/bash
   register: st_import
   changed_when: "'Import complete' in st_import.stdout or 'Started import' in st_import.stdout"
-  become_user: "{{ linux_owner }}"
 
 
 # ─── PLUGINS ─────────────────────────────────────────────────── #
