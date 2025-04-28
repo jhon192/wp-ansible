@@ -126,7 +126,7 @@
       loop_control:
         loop_var: site
 
-    - name: Activate theme via WP-CLI
+    # - name: Activate theme via WP-CLI
       # command: >
       #   wp theme activate onepress
       #   --path=/home/semaphore/{{ site.domain }}
