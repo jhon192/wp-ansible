@@ -97,20 +97,16 @@
   changed_when: "'Import complete' in st_import.stdout or 'Started import' in st_import.stdout"
 
 
-# Sin filtros: dame el primer kit gratuito de Gutenberg
-- name: Obtener un kit gratuito tipo “About-Me”
+########################################################################
+#  IMPORTAR kit “Personal Portfolio” (About-Me)                        #
+########################################################################
+- name: Importar plantilla Personal Portfolio
   shell: |
-    wp starter-templates list \
-      --type=free --page-builder=gutenberg --allow-root --format=ids \
-      --path={{ wp_path }} | head -n1
-  register: kit_id
-  changed_when: false
-
-- name: Importar ese kit
-  shell: wp starter-templates import {{ kit_id.stdout | trim }} --allow-root --yes --path={{ wp_path }}
+    wp starter-templates import 59219 --allow-root \
+    --path={{ wp_path }} \ 
+    --yes
   register: st_import
   changed_when: "'Import complete' in st_import.stdout or 'Started import' in st_import.stdout"
-
 
 
 # ─── PLUGINS ─────────────────────────────────────────────────── #
