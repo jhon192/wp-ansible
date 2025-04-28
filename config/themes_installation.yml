@@ -101,17 +101,15 @@
 - name: Obtener un kit gratuito tipo “About-Me”
   shell: |
     wp starter-templates list \
-      --type=free --page-builder=gutenberg --format=ids \
+      --type=free --page-builder=gutenberg --allow-root --format=ids \
       --path={{ wp_path }} | head -n1
   register: kit_id
   changed_when: false
-  become: true
 
 - name: Importar ese kit
-  shell: wp starter-templates import {{ kit_id.stdout | trim }} --yes --path={{ wp_path }}
+  shell: wp starter-templates import {{ kit_id.stdout | trim }} --allow-root --yes --path={{ wp_path }}
   register: st_import
   changed_when: "'Import complete' in st_import.stdout or 'Started import' in st_import.stdout"
-  become: true
 
 
 
