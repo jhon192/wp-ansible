@@ -1,0 +1,137 @@
+---
+# ---------------------------------------------------------------
+# Included by bootstrap-wordpress.yml for each item in wordpress_sites
+# Expects "site" dict plus the global vars (theme_slug, starter_pages…)
+# ---------------------------------------------------------------
+
+# ─── Local convenience vars ─────────────────────────────────── #
+- vars:
+    wp_path: "/var/www/{{ site.domain }}"
+    linux_owner: "{{ site.linux_user | default('www-data') }}"
+
+# ─── Ensure doc-root exists & correct owner ‐ optional ───────── #
+- name: Ensure {{ wp_path }} exists
+  file:
+    path: "{{ wp_path }}"
+    state: directory
+    owner: "{{ linux_owner }}"
+    mode: "0755"
+
+# (Assumption: core download / config / install already done earlier.)
+
+# ─── THEME ───────────────────────────────────────────────────── #
+- name: Install & activate {{ theme_slug }} for {{ site.domain }}
+  shell: |
+    wp theme is-installed {{ theme_slug }} --path={{ wp_path }} \
+    || wp theme install {{ theme_slug }} --activate --path={{ wp_path }}
+  args: { executable: /bin/bash }
+  become_user: "{{ linux_owner }}"
+
+# ─── STARTER PAGES ───────────────────────────────────────────── #
+- name: Ensure starter pages exist ({{ site.domain }})
+  shell: |
+    slug=$(echo "{{ item }}" | tr '[:upper:]' '[:lower:]' | tr ' ' '-') &&
+    wp post list --post_type=page --field=ID --name=$slug --path={{ wp_path }} | head -n1 \
+    || wp post create --post_type=page --post_title='{{ item }}' --post_status=publish \
+       --porcelain --path={{ wp_path }}
+  loop: "{{ starter_pages }}"
+  register: page_create
+  changed_when: "'Created' in page_create.stdout"
+  become_user: "{{ linux_owner }}"
+
+# ─── STATIC FRONT PAGE (Home) ────────────────────────────────── #
+- name: Get Home page ID
+  shell: >
+    wp post list --post_type=page --field=ID --name=home --path={{ wp_path }} | head -n1
+  register: home_id_raw
+  changed_when: false
+  become_user: "{{ linux_owner }}"
+
+- name: Set Home as the front page
+  shell: >
+    wp option update show_on_front page --path={{ wp_path }} &&
+    wp option update page_on_front {{ home_id_raw.stdout | trim }} --path={{ wp_path }}
+  become_user: "{{ linux_owner }}"
+
+# ─── PLUGINS ─────────────────────────────────────────────────── #
+- name: Ensure plugins present / up-to-date
+  shell: >
+    wp plugin install {{ item.slug }}
+    {% if item.state == 'latest' %} --force {% endif %}
+    {%- if item.activate %} --activate {% endif %}
+    --path={{ wp_path }}
+  loop: "{{ plugins }}"
+  loop_control: { label: "{{ item.slug }}" }
+  register: plug
+  changed_when: "'Installing' in plug.stdout or 'Downloading' in plug.stdout"
+  become_user: "{{ linux_owner }}"
+
+# ─── DEMO DATA (OCDI) – runs only if JSON exists ─────────────── #
+- name: Import demo content (if present)
+  shell: |
+    test -f {{ wp_path }}/wp-content/themes/{{ theme_slug }}/inc/demo-content.json &&
+    wp ocdi import {{ wp_path }}/wp-content/themes/{{ theme_slug }}/inc/demo-content.json \
+       --path={{ wp_path }} || true
+  args: { executable: /bin/bash }
+  become_user: "{{ linux_owner }}"
+
+# ─── MAIN MENU ───────────────────────────────────────────────── #
+- name: Ensure “Main” menu exists
+  shell: |
+    wp menu list --format=ids --name="Main" --path={{ wp_path }} | head -n1 \
+    || wp menu create "Main" --porcelain --path={{ wp_path }}
+  register: menu_id_raw
+  changed_when: "'Created' in menu_id_raw.stdout"
+  become_user: "{{ linux_owner }}"
+
+- set_fact:
+    menu_id: >-
+      {{ (menu_id_raw.stdout_lines[-1] | int) if 'Created' in menu_id_raw.stdout
+         else (menu_id_raw.stdout | int) }}
+
+- name: Add pages to Main menu
+  shell: |
+    PAGE_ID=$(wp post list --post_type=page --field=ID --name={{ item.key }} --path={{ wp_path }} | head -n1) &&
+    wp menu item add-post {{ menu_id }} $PAGE_ID --title='{{ item.value }}' \
+      --path={{ wp_path }} 2>/dev/null || true
+  loop: "{{ menu_items | dict2items }}"
+  loop_control: { label: "{{ item.value }}" }
+  args: { executable: /bin/bash }
+  become_user: "{{ linux_owner }}"
+
+# ─── PRETTY PERMALINKS ───────────────────────────────────────── #
+- name: Pretty permalinks (/%postname%/)
+  shell: wp rewrite structure '/%postname%/' --path={{ wp_path }}
+  register: perm
+  changed_when: "'Success' in perm.stdout"
+  become_user: "{{ linux_owner }}"
+
+# ─── OPTIONAL CHILD THEME & TEMPLATES ────────────────────────── #
+- name: Scaffold & activate child theme
+  when: child_theme
+  shell: >
+    wp scaffold child-theme "{{ theme_slug }}-child" --parent_theme={{ theme_slug }}
+    --path={{ wp_path }} --activate
+  args:
+    creates: "{{ wp_path }}/wp-content/themes/{{ theme_slug }}-child/style.css"
+  become_user: "{{ linux_owner }}"
+
+- name: Copy custom templates into child theme
+  when: child_theme and custom_templates | length > 0
+  copy:
+    src: "templates/{{ item }}"
+    dest: "{{ wp_path }}/wp-content/themes/{{ theme_slug }}-child/{{ item }}"
+    owner: "{{ linux_owner }}"
+    mode: '0644'
+  loop: "{{ custom_templates }}"
+
+# ─── FLUSH REWRITE RULES ─────────────────────────────────────── #
+- name: Flush rewrite rules
+  shell: wp rewrite flush --hard --path={{ wp_path }}
+  become_user: "{{ linux_owner }}"
+
+# ─── SMOKE-TEST ──────────────────────────────────────────────── #
+- name: Verify home page returns 200 ({{ site.domain }})
+  uri:
+    url: "http://{{ site.host | default(site.domain) }}/"
+    status_code: 200

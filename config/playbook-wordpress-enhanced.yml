@@ -1,8 +1,15 @@
+---
 - name: Robust Multi-Domain WordPress Setup
   hosts: localhost
   become: true
+
+  #################################################################
+  # ------------ GLOBAL VARS (tweak as needed) ------------------- #
+  #################################################################
   vars:
     ansible_remote_tmp: "/tmp/.ansible-123324453"
+
+    # ─── Per-site data (you already had these) ─────────────────── #
     wordpress_sites:
       - domain: "{{ DOMAIN }}"
         host: "{{ HOST }}"
@@ -17,233 +24,92 @@
         website_name: "{{ WEBSITE_NAME }}"
         linux_user: "{{ LINUX_USER }}"
 
-      # - domain: example1.com
-      #   host: example1.com
-      #   db_name: wp_example1
-      #   db_user: wpuser1
-      #   db_pass: SecurePass1!
-      #   wp_admin_user: admin1
-      #   wp_admin_pass: AdminPass1!
-      #   wp_admin_email: admin1@example.com
-      #   website_name: sites1
-      #   linux_user: user1
+    # ─── New: shared WP bootstrap settings (can be overridden per-site) ─── #
+    theme_slug: astra
+    starter_pages: [Home, About, Contact]
+    plugins:
+      - { slug: contact-form-7,        state: present, activate: true }
+      - { slug: one-click-demo-import, state: latest,  activate: true }
+    menu_items:
+      home:    "Home"
+      about:   "About"
+      contact: "Contact"
+    child_theme: true
+    custom_templates: []          # e.g. [front-page.php, page-sidebar.php]
 
+  #################################################################
   tasks:
-    - name: Debug all variables
-      debug:
-        var: item
-      loop: "{{ wordpress_sites }}"
 
-    # - name: Install Dependencies (Apache, PHP, MariaDB, WP-CLI)
-    #   apt:
-    #     name:
-    #       - apache2
-    #       - php
-    #       - php-mysql
-    #       - libapache2-mod-php
-    #       - mariadb-server
-    #       - mariadb-client
-    #       - python3-mysqldb
-    #       - unzip
-    #       - curl
-    #     update_cache: yes
-    #     state: present
+  - name: Debug site list (optional)
+    debug:
+      var: item
+    loop: "{{ wordpress_sites }}"
+    when: verbosity | default(0) | int > 0
 
-    - name: Install Apache, PHP, and WP-CLI Dependencies
-      apt:
-        name:
-          - apache2
-          - php
-          - php-mysql
-          - libapache2-mod-php
-          - curl
-          - less
-          - mariadb-server
-          - mariadb-client
-          - python3-mysqldb
-          - unzip
-        state: present
+  # ── Base packages ────────────────────────────────────────────── #
+  - name: Install Apache, PHP and WP-CLI dependencies
+    apt:
+      name:
+        - apache2
+        - php
+        - php-mysql
+        - libapache2-mod-php
+        - curl
+        - less
+        - mariadb-server
+        - mariadb-client
+        - python3-mysqldb
+        - unzip
+      state: present
+      update_cache: yes
 
-    - name: Ensure Apache modules enabled
-      apache2_module:
-        name: "{{ item }}"
-        state: present
-      loop:
-        - rewrite
-        - proxy
-        - proxy_http
-        - ssl
-        - headers
+  - name: Ensure Apache modules enabled
+    apache2_module:
+      name: "{{ item }}"
+      state: present
+    loop:
+      - rewrite
+      - proxy
+      - proxy_http
+      - ssl
+      - headers
 
-    - name: Start and Enable MariaDB
-      service:
-        name: mariadb
-        state: started
-        enabled: true
+  - name: Start and enable MariaDB
+    service:
+      name: mariadb
+      state: started
+      enabled: true
 
-    # put these tasks before the first WordPress site is deployed
-    - name: Fix /home/semaphore ownership/perms so both Ansible and Apache work
-      block:
-        - file:
-            path: /home/semaphore
-            owner: semaphore
-            group: www-data
-            state: directory
-        - file:
-            path: /home/semaphore
-            mode: "0750"
-            state: directory
+  - name: Fix /home/semaphore perms so both Ansible and Apache work
+    block:
+      - file:
+          path: /home/semaphore
+          owner: semaphore
+          group: www-data
+          state: directory
+      - file:
+          path: /home/semaphore
+          mode: "0750"
+          state: directory
 
-    # - name: Configure firewall to allow each site port
-    #   ufw:
-    #     rule: allow
-    #     port: "{{ item.port }}"
-    #     proto: tcp
-    #   loop: "{{ wordpress_sites }}"
+  # ── WP-CLI (installed once globally) ─────────────────────────── #
+  - name: Install WP-CLI
+    get_url:
+      url: https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+      dest: /usr/local/bin/wp
+      mode: "0755"
+    register: wpcli_dl
+    changed_when: wpcli_dl.dest is changed
 
-    # - name: Add custom Listen ports to /etc/apache2/ports.conf
-    #   lineinfile:
-    #     path: /etc/apache2/ports.conf
-    #     line: "Listen {{ item.port }}"
-    #     insertafter: EOF
-    #     state: present
-    #   loop: "{{ wordpress_sites }}"
-
-    - name: Deploy each WordPress site
-      include_tasks: wordpress_site_setup.yml
-      loop: "{{ wordpress_sites }}"
-      loop_control:
-        loop_var: site
-
-    - name: Install theme via WP-CLI
-      command: >
-        wp theme install WP-Bootstrap-4 --activate
-        --path=/home/semaphore/{{ site.domain }}
-        --allow-root
-      args:
-        chdir: /usr/local/bin
-      loop: "{{ wordpress_sites }}"
-      loop_control:
-        loop_var: site
-
-    # - name: Activate theme via WP-CLI
-      # command: >
-      #   wp theme activate onepress
-      #   --path=/home/semaphore/{{ site.domain }}
-      #   --allow-root
-      # args:
-      #   chdir: /usr/local/bin
-      # loop: "{{ wordpress_sites }}"
-      # loop_control:
-      #   loop_var: site
-
-    # - name: Ensure “Home” page has OnePress-style starter content
-    #   ansible.builtin.shell: |
-    #     # Obtener (o crear si faltara) la página Home y quedarnos con su ID
-    #     PAGE_ID=$(wp post list \
-    #                 --post_type=page \
-    #                 --title='Home' \
-    #                 --field=ID \
-    #                 --path=/home/semaphore/{{ site.domain }} \
-    #                 --allow-root)
-
-    #     if [ -z "$PAGE_ID" ]; then
-    #       PAGE_ID=$(wp post create \
-    #                   --post_type=page \
-    #                   --post_title='Home' \
-    #                   --post_name='home' \
-    #                   --post_status=publish \
-    #                   --porcelain \
-    #                   --path=/home/semaphore/{{ site.domain }} \
-    #                   --allow-root)
-    #     fi
-
-    #     ##################################################################
-    #     # Contenido HTML sencillo que encaja con las secciones por defecto
-    #     # del tema OnePress. Modifícalo a tu gusto.
-    #     ##################################################################
-    #     read -r -d '' CONTENT <<'EOF'
-    #     <!-- wp:cover {"overlayColor":"primary","minHeight":70,"align":"full"} -->
-    #     <div class="wp-block-cover alignfull" style="min-height:70vh"><span aria-hidden="true" class="wp-block-cover__background has-primary-background-color has-background-dim"></span><div class="wp-block-cover__inner-container"><!-- wp:heading {"textAlign":"center","level":1,"textColor":"white"} -->
-    #     <h1 class="has-text-align-center has-white-color has-text-color">Bienvenido a {{ site.domain }}</h1>
-    #     <!-- /wp:heading -->
-
-    #     <!-- wp:buttons {"layout":{"type":"flex","justifyContent":"center"}} -->
-    #     <div class="wp-block-buttons"><!-- wp:button {"textColor":"primary","style":{"gradient":"linear-gradient(90deg,rgb(255,255,255) 0%,rgb(244,244,244) 100%)"}} -->
-    #     <div class="wp-block-button"><a class="wp-block-button__link has-primary-color has-text-color has-background" href="#services">Nuestros servicios</a></div>
-    #     <!-- /wp:button --></div>
-    #     <!-- /wp:buttons --></div></div>
-    #     <!-- /wp:cover -->
-
-    #     <!-- wp:heading {"level":2,"align":"center"} -->
-    #     <h2 class="has-text-align-center" id="services">Servicios destacados</h2>
-    #     <!-- /wp:heading -->
-
-    #     <!-- wp:columns {"align":"wide"} -->
-    #     <div class="wp-block-columns alignwide">
-    #       <!-- wp:column -->
-    #       <div class="wp-block-column"><!-- wp:image {"id":123,"sizeSlug":"large"} /--><!-- wp:heading {"textAlign":"center","level":3} --><h3 class="has-text-align-center">Diseño web</h3><!-- /wp:heading --></div>
-    #       <!-- /wp:column -->
-    #       <!-- wp:column -->
-    #       <div class="wp-block-column"><!-- wp:image {"id":124,"sizeSlug":"large"} /--><!-- wp:heading {"textAlign":"center","level":3} --><h3 class="has-text-align-center">SEO</h3><!-- /wp:heading --></div>
-    #       <!-- /wp:column -->
-    #       <!-- wp:column -->
-    #       <div class="wp-block-column"><!-- wp:image {"id":125,"sizeSlug":"large"} /--><!-- wp:heading {"textAlign":"center","level":3} --><h3 class="has-text-align-center">e-Commerce</h3><!-- /wp:heading --></div>
-    #       <!-- /wp:column -->
-    #     </div>
-    #     <!-- /wp:columns -->
-
-    #     <!-- wp:paragraph {"align":"center"} -->
-    #     <p class="has-text-align-center">OnePress es un tema de una sola página perfecto para tu negocio o portafolio.</p>
-    #     <!-- /wp:paragraph -->
-    #     EOF
-
-    #     ##################################################################
-    #     # Compara el contenido actual con el deseado.
-    #     ##################################################################
-    #     CURRENT_HASH=$(wp post get "$PAGE_ID" --field=post_content --path=/home/semaphore/{{ site.domain }} --allow-root | sha1sum | cut -d' ' -f1)
-    #     NEW_HASH=$(echo "$CONTENT" | sha1sum | cut -d' ' -f1)
-
-    #     if [ "$CURRENT_HASH" != "$NEW_HASH" ]; then
-    #       # Actualiza solo si ha cambiado (idempotente)
-    #       wp post update "$PAGE_ID" \
-    #         --post_content="$CONTENT" \
-    #         --path=/home/semaphore/{{ site.domain }} \
-    #         --allow-root
-    #       echo "Success: Updated page $PAGE_ID"
-    #     fi
-    #   args:
-    #     chdir: /usr/local/bin
-    #   register: home_content_cmd
-    #   changed_when: "'Success: Updated page' in home_content_cmd.stdout"
-    #   loop: "{{ wordpress_sites }}"
-    #   loop_control:
-    #     loop_var: site
-
-    # #######################################################################
-    # # 4) Designar la página Home como portada estática
-    # #######################################################################
-    # - name: Set static front page to “Home”
-    #   ansible.builtin.shell: |
-    #     PAGE_ID=$(wp post list \
-    #                 --post_type=page \
-    #                 --title='Home' \
-    #                 --field=ID \
-    #                 --path=/home/semaphore/{{ site.domain }} \
-    #                 --allow-root)
-
-    #     # Asegurarse de que el sitio usa “página estática” y que Home es la portada
-    #     CURRENT_FRONT=$(wp option get page_on_front --path=/home/semaphore/{{ site.domain }} --allow-root || echo 0)
-
-    #     if [ "$PAGE_ID" != "$CURRENT_FRONT" ]; then
-    #       wp option update show_on_front page --path=/home/semaphore/{{ site.domain }} --allow-root
-    #       wp option update page_on_front  "$PAGE_ID" --path=/home/semaphore/{{ site.domain }} --allow-root
-    #       echo "Success: Front page set to Home ($PAGE_ID)"
-    #     fi
-    #   args:
-    #     chdir: /usr/local/bin
-    #   register: front_page_cmd
-    #   changed_when: "'Success: Front page set to Home' in front_page_cmd.stdout"
-    #   loop: "{{ wordpress_sites }}"
-    #   loop_control:
-    #     loop_var: site
+  # ── Loop over each domain: delegate to include file ──────────── #
+  - name: Deploy each WordPress site
+    include_tasks: wordpress_site_setup.yml
+    loop: "{{ wordpress_sites }}"
+    loop_control:
+      loop_var: site
+  
+  - name: Add themes in your domain
+    include_tasks: themes_installation.yml
+    loop: "{{ wordpress_sites }}"
+    loop_control:
+      loop_var: site
