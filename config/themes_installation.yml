@@ -9,7 +9,7 @@
   set_fact:
     wp_path: "/home/semaphore/{{ site.domain }}"
     linux_owner: "{{ site.linux_user | default('www-data') }}"
-    template: "{{ site.template_id | '68423' }}"
+    template: "{{ site.template_id | default('68423') }}"
 
 # # ─── Ensure doc-root exists & correct owner ‐ optional ───────── #
 # - name: Ensure {{ wp_path }} exists
@@ -63,7 +63,6 @@
     --yes
   register: st_import
   ignore_errors: true
-
 
 
 # ─── PLUGINS ─────────────────────────────────────────────────── #
