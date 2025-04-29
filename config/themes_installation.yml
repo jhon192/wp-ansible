@@ -62,6 +62,7 @@
     owner: "{{ linux_owner }}"
     group: "{{ linux_owner }}"
     mode: "0755"
+  ignore_errors: true
 
 - name: Crear subcarpeta st-importer
   file:
