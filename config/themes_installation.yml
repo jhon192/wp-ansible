@@ -76,22 +76,12 @@
 #  IMPORTAR kit “Personal Portfolio” (About-Me)                        #
 ########################################################################
 
-- name: DEBUG · ver comando exacto
-  debug:
-    msg: >
-      wp starter-templates import {{ template }} --yes
-      --path={{ wp_path }} --allow-root
-
-
-- name: Importar kit Starter Templates
+- name: Importar kit (versión final, idempotente)
   shell: >
-    wp --path={{ wp_path }} --allow-root starter-templates import {{ template }} --yes --quiet
+    wp --path={{ wp_path }} --allow-root starter-templates import {{ template }} --yes --quiet 2>&1 | tee -a {{ wp_path }}/starter-import.log
   register: st_import
-
-  changed_when: "'Import complete' in st_import.stdout or 'Import finished'  in st_import.stdout or 'Imported Form' in st_import.stdout"
-
-  failed_when: >
-    ('Import complete' not in st_import.stdout and 'Import finished'  not in st_import.stdout)
+  changed_when: "'Import complete' in st_import.stdout or 'Import finished'  in st_import.stdout"
+  failed_when: "'Import complete' not in st_import.stdout and 'Import finished'  not in st_import.stdout"
 
 
 
