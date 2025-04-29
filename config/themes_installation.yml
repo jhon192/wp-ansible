@@ -5,10 +5,11 @@
 # ---------------------------------------------------------------
 
 # ─── Local convenience vars ─────────────────────────────────── #
-- name: Definir variables locales del sitio
+- name: set locals vars from website
   set_fact:
     wp_path: "/home/semaphore/{{ site.domain }}"
     linux_owner: "{{ site.linux_user | default('www-data') }}"
+    template_id: "{{ site.template_id | 68423 }}"
 
 # # ─── Ensure doc-root exists & correct owner ‐ optional ───────── #
 # - name: Ensure {{ wp_path }} exists
@@ -38,46 +39,11 @@
   register: page_create
   changed_when: "'Created' in page_create.stdout"
 
-# ─── STATIC FRONT PAGE (Home) ────────────────────────────────── #
-###############################################################################
-# 1 ▸ Crear SIEMPRE la página “Home” y quedarnos con su ID                    #
-###############################################################################
-# - name: Crear la página Home (porcelana devuelve solo el ID)
-#   command: >
-#     wp post create
-#       --post_type=page
-#       --post_title='Home'
-#       --post_status=publish
-#       --porcelain
-#       --path={{ wp_path }}
-#       --allow-root
-#   register: home_create # ← ID numérico recién creado
-#   changed_when: true # siempre marca “changed”
-#   args:
-#     chdir: /usr/local/bin
-
-# ###############################################################################
-# # 2 ▸ Definir Home como portada *solo si no lo está*                          #
-# ###############################################################################
-# - name: Definir Home como portada (solo si cambia)
-#   shell: |
-#     CURRENT_FRONT=$(wp option get page_on_front --path={{ wp_path }} --allow-root 2>/dev/null || echo 0)
-
-#     if [ "{{ home_create.stdout | trim }}" != "$CURRENT_FRONT" ]; then
-#       wp option update show_on_front page --path={{ wp_path }} --allow-root --quiet
-#       wp option update page_on_front {{ home_create.stdout | trim }} --path={{ wp_path }} --allow-root --quiet
-#       echo "Success: Front page set to Home ({{ home_create.stdout | trim }})"
-#     fi
-#   args:
-#     executable: /bin/bash
-#     chdir: /usr/local/bin
-#   register: front_page_cmd
-#   changed_when: "'Success: Front page set to Home' in front_page_cmd.stdout"
 
 ########################################################################
 #  Starter Templates (plugin + import)                                 #
 ########################################################################
-- name: Instalar y activar Starter Templates
+- name: install and activate starter Templates
   shell: >
     wp plugin install astra-sites --activate
     --allow-root --path={{ wp_path }} --quiet
@@ -86,15 +52,18 @@
   register: st_plugin
   changed_when: "'Installing' in st_plugin.stdout or 'Downloading' in st_plugin.stdout"
 
-# - name: Importar plantilla pre-construida (si se definió)
-#   when: site.starter_template_id is defined
-#   shell: >
-#     wp starter-templates import {{ site.starter_template_id }} --yes
-#      --allow-root --path={{ wp_path }}
-#   args:
-#     executable: /bin/bash
-#   register: st_import
-#   changed_when: "'Import complete' in st_import.stdout or 'Started import' in st_import.stdout"
+    ########################################################################
+#  IMPORTAR kit “Personal Portfolio” (About-Me)                        #
+########################################################################
+- name: import templates from id 
+  shell: |
+    wp starter-templates import {{ template_id }} --allow-root \
+    --path={{ wp_path }} \ 
+    --debug \
+    --yes
+  register: st_import
+  ignore_errors: true
+
 
 
 # ─── PLUGINS ─────────────────────────────────────────────────── #
@@ -172,16 +141,3 @@
   uri:
     url: "http://{{ site.host | default(site.domain) }}/"
     status_code: 200
-
-  ########################################################################
-#  IMPORTAR kit “Personal Portfolio” (About-Me)                        #
-########################################################################
-- name: Importar plantilla Personal Portfolio
-  shell: |
-    wp starter-templates import 68423 --allow-root \
-    --path={{ wp_path }} \ 
-    --debug \
-    --yes
-  register: st_import
-  changed_when: "'Import complete' in st_import.stdout or 'Started import' in st_import.stdout"
-  ignore_errors: true

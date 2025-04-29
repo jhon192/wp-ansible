@@ -23,6 +23,7 @@
         wp_admin_email: "{{ WP_ADMIN_EMAIL }}"
         website_name: "{{ WEBSITE_NAME }}"
         linux_user: "{{ LINUX_USER }}"
+        template_id: "{{ TEMPLATE_ID  }}"
 
     # ─── New: shared WP bootstrap settings (can be overridden per-site) ─── #
     theme_slug: astra
@@ -35,7 +36,7 @@
       about:   "About"
       contact: "Contact"
     child_theme: true
-    custom_templates: []          # e.g. [front-page.php, page-sidebar.php]
+    custom_templates: []          
 
   #################################################################
   tasks:
