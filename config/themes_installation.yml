@@ -59,8 +59,8 @@
   file:
     path: "{{ wp_path }}/wp-content/uploads"
     state: directory
-    owner: "{{ linux_owner }}"
-    group: "{{ linux_owner }}"
+    owner: www-data
+    group: www-data
     mode: "0755"
   ignore_errors: true
 
@@ -68,8 +68,8 @@
   file:
     path: "{{ wp_path }}/wp-content/uploads/st-importer"
     state: directory
-    owner: "{{ linux_owner }}"
-    group: "{{ linux_owner }}"
+    owner: www-data
+    group: www-data
     mode: "0755"
 
 ########################################################################
