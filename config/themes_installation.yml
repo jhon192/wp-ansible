@@ -52,7 +52,26 @@
   register: st_plugin
   changed_when: "'Installing' in st_plugin.stdout or 'Downloading' in st_plugin.stdout"
 
-    ########################################################################
+###############################################################################
+# Asegurar uploads y subcarpeta del importador                                #
+###############################################################################
+- name: Crear wp-content/uploads si no existe
+  file:
+    path: "{{ wp_path }}/wp-content/uploads"
+    state: directory
+    owner: "{{ linux_owner }}"
+    group: "{{ linux_owner }}"
+    mode: "0755"
+
+- name: Crear subcarpeta st-importer
+  file:
+    path: "{{ wp_path }}/wp-content/uploads/st-importer"
+    state: directory
+    owner: "{{ linux_owner }}"
+    group: "{{ linux_owner }}"
+    mode: "0755"
+
+########################################################################
 #  IMPORTAR kit “Personal Portfolio” (About-Me)                        #
 ########################################################################
 
@@ -63,12 +82,16 @@
       --path={{ wp_path }} --allow-root
 
 
-- name: Importar kit Starter Templates (tolerar exit 2 benigno)
+- name: Importar kit Starter Templates
   shell: >
-    wp --path={{ wp_path }} --allow-root starter-templates import {{ template }} --yes
+    wp --path={{ wp_path }} --allow-root starter-templates import {{ template }} --yes --quiet
   register: st_import
-  changed_when: "'Import complete' in st_import.stdout or 'Import finished'  in st_import.stdout"
-  failed_when: "'Import complete' not in st_import.stdout and 'Import finished'  not in st_import.stdout"
+
+  changed_when: "'Import complete' in st_import.stdout or 'Import finished'  in st_import.stdout or 'Imported Form' in st_import.stdout"
+
+  failed_when: >
+    ('Import complete' not in st_import.stdout and 'Import finished'  not in st_import.stdout)
+
 
 
 # ─── PLUGINS ─────────────────────────────────────────────────── #
