@@ -67,7 +67,7 @@
   shell: >
     wp --path={{ wp_path }} --allow-root starter-templates import "{{ template }}" --yes
   register: st_import
-  failed_when: st_import.rc not in [0,1]      # 0 = OK, 1 = sólo avisos
+  failed_when: st_import.rc not in [0,68]      # 0 = OK, 1 = sólo avisos
   changed_when: "'Import complete' in st_import.stdout or
                  'Started import' in st_import.stdout"
 
