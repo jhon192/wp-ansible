@@ -55,13 +55,13 @@
     ########################################################################
 #  IMPORTAR kit “Personal Portfolio” (About-Me)                        #
 ########################################################################
-- name: import templates from id 
+- name: Importar template Starter Templates por ID
   shell: |
-    wp starter-templates import {{ template }} --allow-root \
-    --path={{ wp_path }} \ 
-    --yes
+    wp starter-templates import {{ template }} --yes \
+      --path={{ wp_path }} --allow-root
   register: st_import
-  ignore_errors: true
+  failed_when: st_import.rc not in [0,1]
+  changed_when: "'Import complete' in st_import.stdout or 'Started import' in st_import.stdout"
 
 
 # ─── PLUGINS ─────────────────────────────────────────────────── #
