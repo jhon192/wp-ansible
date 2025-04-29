@@ -139,7 +139,7 @@
 - name: Reemplazar URLs HTTP por HTTPS en contenido y meta
   shell: >
     wp search-replace "http://{{ site.domain }}" "https://{{ site.domain }}"
-    --skip-columns=guid --all-tables --precise --quiet --path={{ wp_path }}
+    --skip-columns=guid --allow-root --all-tables --precise --quiet --path={{ wp_path }}
 
 # ─── OPTIONAL CHILD THEME & TEMPLATES ────────────────────────── #
 - name: Scaffold & activate child theme
