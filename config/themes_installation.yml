@@ -63,13 +63,12 @@
       --path={{ wp_path }} --allow-root
 
 
-- name: Importar kit Starter Templates por ID
+- name: Importar kit Starter Templates (tolerar exit 2 benigno)
   shell: >
-    wp --path={{ wp_path }} --allow-root starter-templates import "{{ template }}" --yes
+    wp --path={{ wp_path }} --allow-root starter-templates import {{ template }} --yes
   register: st_import
-  failed_when: st_import.rc not in [0,68]      # 0 = OK, 1 = sólo avisos
-  changed_when: "'Import complete' in st_import.stdout or
-                 'Started import' in st_import.stdout"
+  changed_when: "'Import complete' in st_import.stdout or 'Import finished'  in st_import.stdout"
+  failed_when: "'Import complete' not in st_import.stdout and 'Import finished'  not in st_import.stdout"
 
 
 # ─── PLUGINS ─────────────────────────────────────────────────── #
