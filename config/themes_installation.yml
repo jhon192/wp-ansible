@@ -9,7 +9,7 @@
   set_fact:
     wp_path: "/home/semaphore/{{ site.domain }}"
     linux_owner: "{{ site.linux_user | default('www-data') }}"
-    template_id: "{{ site.template_id | 68423 }}"
+    template: "{{ site.template_id | '68423' }}"
 
 # # ─── Ensure doc-root exists & correct owner ‐ optional ───────── #
 # - name: Ensure {{ wp_path }} exists
@@ -57,7 +57,7 @@
 ########################################################################
 - name: import templates from id 
   shell: |
-    wp starter-templates import {{ template_id }} --allow-root \
+    wp starter-templates import {{ template }} --allow-root \
     --path={{ wp_path }} \ 
     --debug \
     --yes
