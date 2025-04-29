@@ -55,13 +55,23 @@
     ########################################################################
 #  IMPORTAR kit “Personal Portfolio” (About-Me)                        #
 ########################################################################
-- name: Importar template Starter Templates por ID
-  shell: |
-    wp starter-templates import {{ template }} --yes \
+
+- name: DEBUG · ver comando exacto
+  debug:
+    msg: >
+      wp starter-templates import {{ template }} --yes
       --path={{ wp_path }} --allow-root
+
+
+- name: Importar kit Starter Templates por ID
+  shell: >
+    wp --path={{ wp_path }} --allow-root
+       starter-templates import "{{ template }}" --yes
   register: st_import
-  failed_when: st_import.rc not in [0,1]
-  changed_when: "'Import complete' in st_import.stdout or 'Started import' in st_import.stdout"
+
+  failed_when: st_import.rc not in [0,1]      # 0 = OK, 1 = sólo avisos
+  changed_when: "'Import complete' in st_import.stdout or
+                 'Started import' in st_import.stdout"
 
 
 # ─── PLUGINS ─────────────────────────────────────────────────── #
