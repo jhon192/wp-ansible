@@ -59,7 +59,6 @@
   shell: |
     wp starter-templates import {{ template }} --allow-root \
     --path={{ wp_path }} \ 
-    --debug \
     --yes
   register: st_import
   ignore_errors: true
