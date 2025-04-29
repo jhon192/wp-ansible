@@ -180,5 +180,3 @@
   register: st_import
   changed_when: false        # de momento solo queremos ver la salida
   failed_when: false
-  become_user: "{{ linux_owner }}"
-
