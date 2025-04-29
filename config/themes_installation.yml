@@ -144,7 +144,7 @@
   shell: wp elementor tools regenerate-css --allow-root --path={{ wp_path }} --quiet
   args:
     warn: false          # ignora el warning si Elementor no está instalado
-
+  ignore_errors: true
 
 # ─── OPTIONAL CHILD THEME & TEMPLATES ────────────────────────── #
 - name: Scaffold & activate child theme
