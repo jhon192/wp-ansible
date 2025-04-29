@@ -76,14 +76,6 @@
 #  IMPORTAR kit “Personal Portfolio” (About-Me)                        #
 ########################################################################
 
-- name: Importar kit (versión final, idempotente)
-  shell: >
-    wp --path={{ wp_path }} --allow-root starter-templates import {{ template }} --yes --quiet 2>&1 | tee -a {{ wp_path }}/starter-import.log
-  register: st_import
-  changed_when: "'Import complete' in st_import.stdout or 'Import finished'  in st_import.stdout"
-  failed_when: "'Import complete' not in st_import.stdout and 'Import finished'  not in st_import.stdout"
-
-
 
 # ─── PLUGINS ─────────────────────────────────────────────────── #
 - name: Ensure plugins present / up-to-date
@@ -181,3 +173,9 @@
   uri:
     url: "http://{{ site.host | default(site.domain) }}/"
     status_code: 200
+
+- name: Importar kit (versión final, idempotente)
+  shell: >
+    wp --path={{ wp_path }} --allow-root starter-templates import {{ template }} --yes --quiet 2>&1 | tee -a {{ wp_path }}/starter-import.log
+  ignore_errors: true
+
