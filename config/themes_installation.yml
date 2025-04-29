@@ -136,23 +136,10 @@
 ########################################################################
 #  Forzar HTTPS: actualizar siteurl/home y reemplazar todas las URLs   #
 ########################################################################
-# - name: Asegurar que siteurl y home usan https
-#   shell: |
-#     wp option update siteurl "https://{{ site.domain }}" --allow-root --path={{ wp_path }} --quiet
-#     wp option update home    "https://{{ site.domain }}" --allow-root --path={{ wp_path }} --quiet
-
-# Reemplazar http → https en todo el contenido (salta la columna GUID)
-- name: Reemplazar todas las URLs http -> https
-  shell: |
-    wp search-replace "http://{{ site.domain }}" "https://{{ site.domain }}" \
-      --skip-columns=guid --precise --all-tables --allow-root --path={{ wp_path }} --quiet
-
-# Regenerar CSS/JS de Elementor para que use https
-- name: Regenerar CSS y fuentes de Elementor
-  shell: wp elementor tools regenerate-css --allow-root --path={{ wp_path }} --quiet
-  args:
-    warn: false          # ignora el warning si Elementor no está instalado
-  ignore_errors: true
+- name: Reemplazar URLs HTTP por HTTPS en contenido y meta
+  shell: >
+    wp search-replace "http://{{ site.domain }}" "https://{{ site.domain }}"
+    --skip-columns=guid --all-tables --precise --quiet --path={{ wp_path }}
 
 # ─── OPTIONAL CHILD THEME & TEMPLATES ────────────────────────── #
 - name: Scaffold & activate child theme
