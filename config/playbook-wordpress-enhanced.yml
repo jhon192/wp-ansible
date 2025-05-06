@@ -127,5 +127,4 @@
   - name: Display the new application password (human-friendly)
     debug:
       msg: "App-Password {{ app_pw.stdout }}"
-    when: app_pw.stdout is defined and app_pw.stdout | length > 0
     ignore_errors: true
