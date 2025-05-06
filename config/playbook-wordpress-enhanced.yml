@@ -106,3 +106,27 @@
     loop: "{{ wordpress_sites }}"
     loop_control:
       loop_var: site
+
+  - name: Create WP Application Password for {{ site.wp_admin_user }}
+    command: >
+      wp user application-password create
+      "{{ site.wp_admin_user }}"
+      "{{ site.linux_user | default('ansible-app') }}"
+      --porcelain
+      --path=/home/semaphore/{{ site.linux_user }}
+      --allow-root
+      --skip-plugins --skip-themes
+    loop: "{{ wordpress_sites }}"
+    loop_control:
+      loop_var: site
+    args:
+      chdir: /usr/local/bin
+    register: app_pw
+    changed_when: app_pw.rc == 0
+
+  - name: Display the new application password (human-friendly)
+    debug:
+      msg: "App-Password for {{ site.domain }} → {{ app_pw.stdout }}"
+    loop: "{{ wordpress_sites }}"
+    loop_control:
+      loop_var: site
