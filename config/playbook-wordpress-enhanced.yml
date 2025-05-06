@@ -126,5 +126,5 @@
 
   - name: Display the new application password (human-friendly)
     debug:
-      msg: "App-Password {{ app_pw.stdout }}"
+      msg: "App-Password {{ app_pw }}"
     ignore_errors: true
