@@ -107,26 +107,28 @@
     loop_control:
       loop_var: site
 
-  - name: Create WP Application Password for {{ site.wp_admin_user }}
-    command: >
-      wp user application-password create
-      "{{ site.wp_admin_user }}"
-      "{{ site.linux_user | default('ansible-app') }}"
-      --porcelain
-      --path=/home/semaphore/{{ site.linux_user }}
-      --allow-root
-      --skip-plugins --skip-themes
-    loop: "{{ wordpress_sites }}"
-    loop_control:
+- name: Generate application-password for {{ site.wp_admin_user }}
+  command: >
+    wp user application-password create
+    "{{ site.wp_admin_user }}"
+    "{{ site.application_name | default('ansible-app') }}"
+    --porcelain
+    --path=/home/semaphore/{{ site.linux_user }}
+    --allow-root
+    --skip-plugins --skip-themes
+  register: app_pw
+  loop: "{{ wordpress_sites }}"
+  loop_control:
       loop_var: site
-    args:
-      chdir: /usr/local/bin
-    register: app_pw
-    changed_when: app_pw.rc == 0
+  failed_when: app_pw.rc != 0
+  changed_when: "'Error:' not in app_pw.stdout"
+  ignore_errors: true
 
-  - name: Display the new application password (human-friendly)
-    debug:
-      msg: "App-Password for {{ site.domain }} → {{ app_pw.stdout }}"
-    loop: "{{ wordpress_sites }}"
-    loop_control:
-      loop_var: site
+- name: Show the password in Ansible output
+  debug:
+    msg: "App-Password for {{ site.domain }} → {{ app_pw.stdout }}"
+  loop: "{{ wordpress_sites }}"
+  loop_control:
+    loop_var: site
+  when: app_pw.stdout is defined and app_pw.stdout | length > 0
+  ignore_errors: true
