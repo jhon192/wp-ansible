@@ -130,4 +130,7 @@
       Content-Type: "application/x-www-form-urlencoded"
     status_code: 200
   register: wordpress_install
+  until:   wordpress_install.status == 200   # Repite si no es 200
+  retries: 15                                 # Máx. 5 intentos
+  delay:   5                                 # 2 s entre intentos
   ignore_errors: true
