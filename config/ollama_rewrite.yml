@@ -1,7 +1,7 @@
 ---
-- name: Get List of All Posts and Pages
+- name: Get List of All Pages
   ansible.builtin.command: >
-    wp post list --post_type=any --field=ID
+    wp post list --post_type=page --field=ID
     --path=/home/semaphore/{{ site.linux_user }}
     --allow-root
   register: content_ids
