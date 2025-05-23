@@ -1,21 +1,21 @@
 ---
-- name: Get List of Published Posts
+- name: Get List of All Posts and Pages
   ansible.builtin.command: >
-    wp post list --post_type=post --field=ID
+    wp post list --post_type=any --field=ID
     --path=/home/semaphore/{{ site.linux_user }}
     --allow-root
-  register: post_ids
+  register: content_ids
   changed_when: false
 
-- name: Fetch Current Post Content
+- name: Fetch Current Content
   ansible.builtin.command: >
     wp post get {{ item }} --field=post_content
     --path=/home/semaphore/{{ site.linux_user }}
     --allow-root
   register: old_content
   changed_when: false
-  loop: "{{ post_ids.stdout_lines }}"
-  when: post_ids.stdout_lines | length > 0
+  loop: "{{ content_ids.stdout_lines }}"
+  when: content_ids.stdout_lines | length > 0
 
 - name: Generate AI Replacement Text
   ansible.builtin.uri:
@@ -25,34 +25,42 @@
     body:
       model: "llama3.2"
       prompt: |
-        Rewrite the following blog post in a friendly, concise style.
-        Keep headings as Markdown (##) and end with a call to action.
-
+        You are a technology expert writer. Rewrite the following content in a professional, 
+        engaging style that focuses on technical accuracy and practical implementation. 
+        
+        Guidelines:
+        1. Maintain all technical details and code snippets exactly as they appear
+        2. Explain complex concepts in clear, accessible language
+        3. Add relevant technical context where appropriate
+        4. Keep all HTML/markdown formatting
+        5. Include practical examples or use cases
+        6. End with a technical call-to-action or next steps
+        
         ORIGINAL:
         {{ old_content.results[loop_index].stdout }}
       stream: false
     status_code: 200
     timeout: 120
   register: ollama_reply
-  loop: "{{ post_ids.stdout_lines }}"
+  loop: "{{ content_ids.stdout_lines }}"
   loop_control:
     index_var: loop_index
-  when: post_ids.stdout_lines | length > 0
+  when: content_ids.stdout_lines | length > 0
 
-- name: Update Posts with Generated Content
+- name: Update Content with Generated Text
   ansible.builtin.shell: >
     printf '%s' {{ item.1.json.response | quote }} |
     wp post update {{ item.0 }}
     --path=/home/semaphore/{{ site.linux_user }}
     --allow-root
     --stdin
-  loop: "{{ post_ids.stdout_lines | zip(ollama_reply.results) | list }}"
+  loop: "{{ content_ids.stdout_lines | zip(ollama_reply.results) | list }}"
   register: update_results
   changed_when: update_results.rc == 0
-  when: post_ids.stdout_lines | length > 0
+  when: content_ids.stdout_lines | length > 0
 
-- name: Log Post Updates
+- name: Log Content Updates
   ansible.builtin.debug:
-    msg: "Post {{ item }} on {{ site.domain }} rewritten by Ollama"
-  loop: "{{ post_ids.stdout_lines }}"
-  when: post_ids.stdout_lines | length > 0 
+    msg: "Content ID {{ item }} on {{ site.domain }} rewritten by Ollama"
+  loop: "{{ content_ids.stdout_lines }}"
+  when: content_ids.stdout_lines | length > 0 
