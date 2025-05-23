@@ -141,7 +141,7 @@
 ###########################################################################
 - name: "Get list of all published posts (IDs only)"
   command: >
-    wp post list --post_type=post --field=ID --path=/home/semaphore/{{ site.linux_user }}
+    wp post list --post_type=post --field=ID --path=/home/semaphore/{{ site.linux_user }} --allow-root
   register: post_ids
   changed_when: false
 
