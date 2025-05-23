@@ -23,7 +23,7 @@
     method: POST
     body_format: json
     body:
-      model: "llama3"
+      model: "llama3.2"
       prompt: |
         Rewrite the following blog post in a friendly, concise style.
         Keep headings as Markdown (##) and end with a call to action.
