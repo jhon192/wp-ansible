@@ -149,13 +149,14 @@
   command: >
     wp post get {{ item }} --field=post_content
     --path=/home/semaphore/{{ site.linux_user }}
+    --allow-root
   register: old_content
   changed_when: false
   loop: "{{ post_ids.stdout_lines }}"
 
 - name: Generate replacement text with Ollama
   uri:
-    url: "http://ollama-host:11434/api/generate"
+    url: "https://e34f-186-7-97-57.ngrok-free.app/api/generate"
     method: POST
     body_format: json
     body:
