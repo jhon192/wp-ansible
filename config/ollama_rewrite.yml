@@ -1,114 +1,29 @@
 ---
-# - name: Get List of All Pages
-#   ansible.builtin.command: >
-#     wp post list --post_type=page --field=ID
-#     --path=/home/semaphore/{{ site.linux_user }}
-#     --allow-root
-#   register: content_ids
-#   changed_when: false
-
-# - name: Fetch Current Content
-#   ansible.builtin.command: >
-#     wp post get {{ item }} --field=post_content
-#     --path=/home/semaphore/{{ site.linux_user }}
-#     --allow-root
-#   register: old_content
-#   changed_when: false
-#   loop: "{{ content_ids.stdout_lines }}"
-#   when: content_ids.stdout_lines | length > 0
-
-# - name: Generate AI Replacement Text
-#   ansible.builtin.uri:
-#     url: "https://e34f-186-7-97-57.ngrok-free.app/api/generate"
-#     method: POST
-#     body_format: json
-#     body:
-#       model: "llama3.2"
-#       prompt: |
-#         You are a technology expert writer. Rewrite the following content in a professional, 
-#         engaging style that focuses on technical accuracy and practical implementation. 
-        
-#         Guidelines:
-#         1. Maintain all technical details and code snippets exactly as they appear
-#         2. Explain complex concepts in clear, accessible language
-#         3. Add relevant technical context where appropriate
-#         4. Keep all HTML/markdown formatting
-#         5. Include practical examples or use cases
-#         6. End with a technical call-to-action or next steps
-        
-#         ORIGINAL:
-#         {{ old_content.results[loop_index].stdout }}
-#       stream: false
-#     status_code: 200
-#     timeout: 120
-#   register: ollama_reply
-#   loop: "{{ content_ids.stdout_lines }}"
-#   loop_control:
-#     index_var: loop_index
-#   when: content_ids.stdout_lines | length > 0
-
-# - name: Update Content with Generated Text
-#   ansible.builtin.command: >
-#     wp post update {{ item.0 }}
-#     --path=/home/semaphore/{{ site.linux_user }}
-#     --allow-root
-#     --post_content="{{ item.1.json.response }}"
-#   loop: "{{ content_ids.stdout_lines | zip(ollama_reply.results) | list }}"
-#   register: update_results
-#   changed_when: update_results.rc == 0
-#   throttle: 5
-#   when: content_ids.stdout_lines | length > 0
-
-# - name: Log Content Updates
-#   ansible.builtin.debug:
-#     msg: "Content ID {{ item }} on {{ site.domain }} rewritten by Ollama"
-#   loop: "{{ content_ids.stdout_lines }}"
-#   when: content_ids.stdout_lines | length > 0 
-
-###############################################################
-# 0. Settings you may want to tune
-###############################################################
-- set_fact:
-    ollama_host: "https://502e-186-7-97-57.ngrok-free.app"
-    ollama_model: "llama3.2"
-    ai_concurrency: 4          # number of posts processed in parallel
-    ai_timeout: 120            # seconds per Ollama request
-
-###############################################################
-# 1. Pull ALL page IDs + their content once, as JSON
-###############################################################
-- name: Get ID and content for every published page
-  command: >
-    wp post list
-      --post_type=page
-      --post_status=publish
-      --fields=ID,post_content
-      --format=json
-      --path=/home/semaphore/{{ site.linux_user }}
-      --allow-root
-  register: pages_json
+- name: Get List of All Pages
+  ansible.builtin.command: >
+    wp post list --post_type=page --field=ID
+    --path=/home/semaphore/{{ site.linux_user }}
+    --allow-root
+  register: content_ids
   changed_when: false
 
-- name: Convert JSON into list of dicts
-  set_fact:
-    pages: "{{ pages_json.stdout | from_json }}"
+- name: Fetch Current Content
+  ansible.builtin.command: >
+    wp post get {{ item }} --field=post_content
+    --path=/home/semaphore/{{ site.linux_user }}
+    --allow-root
+  register: old_content
+  changed_when: false
+  loop: "{{ content_ids.stdout_lines }}"
+  when: content_ids.stdout_lines | length > 0
 
-###############################################################
-# 2. Fire OFF all Ollama calls in parallel (async)
-###############################################################
-- name: Launch AI rewrites (async)
-  async: "{{ ai_timeout }}"
-  poll: 0
-  throttle: "{{ ai_concurrency }}"
-  loop: "{{ pages }}"
-  loop_control:
-    loop_var: page
-  uri:
-    url: "{{ ollama_host }}/api/generate"
+- name: Generate AI Replacement Text
+  ansible.builtin.uri:
+    url: "https://e34f-186-7-97-57.ngrok-free.app/api/generate"
     method: POST
     body_format: json
     body:
-      model: "{{ ollama_model }}"
+      model: "llama3.2"
       prompt: |
         You are a technology expert writer. Rewrite the following content in a professional, 
         engaging style that focuses on technical accuracy and practical implementation. 
@@ -120,46 +35,32 @@
         4. Keep all HTML/markdown formatting
         5. Include practical examples or use cases
         6. End with a technical call-to-action or next steps
-
+        
         ORIGINAL:
-        {{ page.post_content }}
+        {{ old_content.results[loop_index].stdout }}
       stream: false
     status_code: 200
-  register: ollama_async
-
-###############################################################
-# 3. Collect async results
-###############################################################
-- name: Wait for all Ollama jobs to finish
-  async_status:
-    jid: "{{ item.ansible_job_id }}"
-  register: ollama_done
-  retries: "{{ ai_timeout // 5 }}"
-  delay: 5
-  until: ollama_done.finished
-  loop: "{{ ollama_async.results }}"
+    timeout: 120
+  register: ollama_reply
+  loop: "{{ content_ids.stdout_lines }}"
   loop_control:
-    label: "job {{ item.item.ID }}"
-  changed_when: false
+    index_var: loop_index
+  when: content_ids.stdout_lines | length > 0
 
-###############################################################
-# 4. Update WordPress pages with the new content
-###############################################################
-- name: Update each page with AI text
-  command: >
-    wp post update {{ item.item.ID }}
-      --post_content="{{ (item.result.response | default('')) | quote }}"
-      --path=/home/semaphore/{{ site.linux_user }}
-      --allow-root
-  loop: "{{ ollama_done.results }}"
-  loop_control:
-    label: "page {{ item.item.ID }}"
-  register: upd
-  changed_when: upd.rc == 0
-  throttle: "{{ ai_concurrency }}   # update in parallel too"
+- name: Update Content with Generated Text
+  ansible.builtin.command: >
+    wp post update {{ item.0 }}
+    --path=/home/semaphore/{{ site.linux_user }}
+    --allow-root
+    --post_content="{{ item.1.json.response }}"
+  loop: "{{ content_ids.stdout_lines | zip(ollama_reply.results) | list }}"
+  register: update_results
+  changed_when: update_results.rc == 0
+  throttle: 5
+  when: content_ids.stdout_lines | length > 0
 
-- name: Log rewritten pages
-  debug:
-    msg: "Page {{ item.item.ID }} on {{ site.domain }} rewritten by Ollama"
-  loop: "{{ ollama_done.results }}"
-  when: (item.result.response | default('')) | length > 0
+- name: Log Content Updates
+  ansible.builtin.debug:
+    msg: "Content ID {{ item }} on {{ site.domain }} rewritten by Ollama"
+  loop: "{{ content_ids.stdout_lines }}"
+  when: content_ids.stdout_lines | length > 0
