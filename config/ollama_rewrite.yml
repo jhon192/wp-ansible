@@ -40,49 +40,23 @@
         {{ old_content.results[loop_index].stdout }}
       stream: false
     status_code: 200
-    timeout: 60
+    timeout: 120
   register: ollama_reply
   loop: "{{ content_ids.stdout_lines }}"
   loop_control:
     index_var: loop_index
-    pause: 0.5
-  async: 300
-  poll: 0
-  when: content_ids.stdout_lines | length > 0
-
-- name: Wait for AI Generation to Complete
-  ansible.builtin.async_status:
-    jid: "{{ item.ansible_job_id }}"
-  register: async_results
-  until: async_results.finished
-  retries: 30
-  delay: 10
-  loop: "{{ ollama_reply.results }}"
   when: content_ids.stdout_lines | length > 0
 
 - name: Update Content with Generated Text
-  ansible.builtin.shell: >
-    printf '%s' {{ item.1.json.response | quote }} |
+  ansible.builtin.command: >
     wp post update {{ item.0 }}
     --path=/home/semaphore/{{ site.linux_user }}
     --allow-root
-    --stdin
-  loop: "{{ content_ids.stdout_lines | zip(async_results.results | map(attribute='ansible_result') | list) | list }}"
+    --post_content="{{ item.1.json.response }}"
+  loop: "{{ content_ids.stdout_lines | zip(ollama_reply.results) | list }}"
   register: update_results
   changed_when: update_results.rc == 0
-  async: 60
-  poll: 0
   throttle: 5
-  when: content_ids.stdout_lines | length > 0
-
-- name: Wait for Content Updates to Complete
-  ansible.builtin.async_status:
-    jid: "{{ item.ansible_job_id }}"
-  register: update_async_results
-  until: update_async_results.finished
-  retries: 30
-  delay: 5
-  loop: "{{ update_results.results }}"
   when: content_ids.stdout_lines | length > 0
 
 - name: Log Content Updates
