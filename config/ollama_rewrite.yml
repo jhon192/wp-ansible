@@ -69,7 +69,7 @@
 # 0. Settings you may want to tune
 ###############################################################
 - set_fact:
-    ollama_host: "https://e34f-186-7-97-57.ngrok-free.app"
+    ollama_host: "https://502e-186-7-97-57.ngrok-free.app"
     ollama_model: "llama3.2"
     ai_concurrency: 4          # number of posts processed in parallel
     ai_timeout: 120            # seconds per Ollama request
