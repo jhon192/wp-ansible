@@ -40,11 +40,8 @@
   when: post_ids.stdout_lines | length > 0
 
 - name: Update Posts with Generated Content
-  ansible.builtin.command: >
-    wp post update {{ item.0 }}
-    --post_content="{{ item.1.json.response | quote }}"
-    --path=/home/semaphore/{{ site.linux_user }}
-    --allow-root
+  ansible.builtin.shell: |
+    echo '{{ item.1.json.response | replace("'", "''") }}' | wp post update {{ item.0 }} --path=/home/semaphore/{{ site.linux_user }} --allow-root --stdin
   loop: "{{ post_ids.stdout_lines | zip(ollama_reply.results) | list }}"
   register: update_results
   changed_when: update_results.rc == 0
