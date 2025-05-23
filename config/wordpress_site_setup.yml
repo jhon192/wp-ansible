@@ -134,3 +134,47 @@
   retries: 15                                 # Máx. 5 intentos
   delay:   5                                 # 2 s entre intentos
   ignore_errors: true
+
+
+###########################################################################
+# Generate replacement content with Ollama and inject it into WordPress
+###########################################################################
+- name: "Get list of all published posts (IDs only)"
+  command: >
+    wp post list --post_type=post --field=ID --path=/home/semaphore/{{ site.linux_user }}
+  register: post_ids
+  changed_when: false
+
+- name: "Loop through each post ID"
+  loop: "{{ post_ids.stdout_lines }}"
+  loop_control:
+    loop_var: pid
+  block:
+
+    - name: "Generate replacement text with Ollama"
+      uri:
+        url: "https://e34f-186-7-97-57.ngrok-free.app/api/generate"
+        method: POST
+        body_format: json
+        body:
+          model: "llama3.2"               # or any model name you’ve pulled
+          prompt: |
+            Rewrite the following WordPress post in a friendly tone:
+
+            {{ lookup('pipe', "wp post get " ~ pid ~ " --field=post_content --path=/home/semaphore/" ~ site.linux_user) }}
+          stream: false
+        status_code: 200
+      register: ollama_out
+
+    - name: "Parse Ollama JSON → pure text"
+      set_fact:
+        new_text: "{{ ollama_out.json.response }}"
+
+    - name: "Update post {{ pid }} with new AI text"
+      command: >
+        wp post update {{ pid }}
+        --post_content="{{ new_text | quote }}"
+        --path=/home/semaphore/{{ site.linux_user }}
+        --allow-root
+      register: upd
+      changed_when: upd.rc == 0
