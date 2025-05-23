@@ -145,36 +145,44 @@
   register: post_ids
   changed_when: false
 
-- name: "Loop through each post ID"
+- name: Get current post content
+  command: >
+    wp post get {{ item }} --field=post_content
+    --path=/home/semaphore/{{ site.linux_user }}
+  register: old_content
+  changed_when: false
   loop: "{{ post_ids.stdout_lines }}"
-  loop_control:
-    loop_var: pid
-  block:
 
-    - name: "Generate replacement text with Ollama"
-      uri:
-        url: "https://e34f-186-7-97-57.ngrok-free.app/api/generate"
-        method: POST
-        body_format: json
-        body:
-          model: "llama3.2"               # or any model name you’ve pulled
-          prompt: |
-            Rewrite the following WordPress post in a friendly tone:
+- name: Generate replacement text with Ollama
+  uri:
+    url: "http://ollama-host:11434/api/generate"
+    method: POST
+    body_format: json
+    body:
+      model: "llama3"
+      prompt: |
+        Rewrite the following blog post in a friendly, concise style.
+        Keep headings as Markdown (##) and end with a call to action.
 
-            {{ lookup('pipe', "wp post get " ~ pid ~ " --field=post_content --path=/home/semaphore/" ~ site.linux_user) }}
-          stream: false
-        status_code: 200
-      register: ollama_out
+        ORIGINAL:
+        {{ old_content.results[ansible_loop.index0].stdout }}
+      stream: false
+    status_code: 200
+    timeout: 120
+  register: ollama_reply
+  loop: "{{ post_ids.stdout_lines }}"
 
-    - name: "Parse Ollama JSON → pure text"
-      set_fact:
-        new_text: "{{ ollama_out.json.response }}"
+- name: Update posts with AI text
+  command: >
+    wp post update {{ item.0 }}
+    --post_content="{{ item.1.json.response | quote }}"
+    --path=/home/semaphore/{{ site.linux_user }}
+    --allow-root
+  loop: "{{ post_ids.stdout_lines | zip(ollama_reply.results) | list }}"
+  register: update_results
+  changed_when: update_results.rc == 0
 
-    - name: "Update post {{ pid }} with new AI text"
-      command: >
-        wp post update {{ pid }}
-        --post_content="{{ new_text | quote }}"
-        --path=/home/semaphore/{{ site.linux_user }}
-        --allow-root
-      register: upd
-      changed_when: upd.rc == 0
+- name: Log rewrites
+  debug:
+    msg: "Post {{ item }} on {{ site.domain }} rewritten by Ollama."
+  loop: "{{ post_ids.stdout_lines }}"
