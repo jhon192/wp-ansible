@@ -53,7 +53,7 @@
     method: POST
     body_format: json
     body:
-      model: wp-astra-generator
+      model: astra-page-writer:latest
       prompt: |
         Rewrite the following WordPress *page* in a friendly, concise style.
         Keep every <img …> tag exactly unchanged.
