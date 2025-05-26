@@ -71,24 +71,38 @@
     pause: 5
   when: content_ids.stdout_lines | length > 0
 
+- name: Create temporary content file
+  ansible.builtin.copy:
+    content: "{{ item.1.json.response }}"
+    dest: "/tmp/wp-content-{{ item.0 }}.html"
+    mode: '0644'
+  loop: "{{ content_ids.stdout_lines | zip(ollama_reply.results) | list }}"
+  when: content_ids.stdout_lines | length > 0
+
 - name: Update Content with Generated Text
-  ansible.builtin.shell: >
+  ansible.builtin.command: >
     wp post update {{ item.0 }} 
     --path=/home/semaphore/{{ site.linux_user }}
     --allow-root
-    --post_content="{{ item.1.json.response | replace('"', '\\"') | replace("'", "\\'") }}"
+    --post_content="$(cat /tmp/wp-content-{{ item.0 }}.html)"
     --skip-plugins
     --skip-themes
-  loop: "{{ content_ids.stdout_lines | zip(ollama_reply.results) | list }}"
+  loop: "{{ content_ids.stdout_lines }}"
   register: update_results
   changed_when: update_results.rc == 0
   when: content_ids.stdout_lines | length > 0
   vars:
-    ansible_command_timeout: 60
+    ansible_command_timeout: 30
   environment:
     WP_CLI_DEBUG: "1"
     WP_CLI_LOG_LEVEL: "debug"
-  ignore_errors: true
+
+- name: Clean up temporary files
+  ansible.builtin.file:
+    path: "/tmp/wp-content-{{ item }}.html"
+    state: absent
+  loop: "{{ content_ids.stdout_lines }}"
+  when: content_ids.stdout_lines | length > 0
 
 - name: Debug Update Results
   ansible.builtin.debug:
