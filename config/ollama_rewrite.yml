@@ -76,7 +76,7 @@
     wp post update {{ item.0 }} 
     --path=/home/semaphore/{{ site.linux_user }}
     --allow-root
-    --post_content='{{ item.1.json.response | replace("'", "'\\''") }}'
+    --post_content="{{ item.1.json.response | replace('"', '\\"') | replace("'", "\\'") }}"
     --skip-plugins
     --skip-themes
   loop: "{{ content_ids.stdout_lines | zip(ollama_reply.results) | list }}"
