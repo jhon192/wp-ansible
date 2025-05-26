@@ -53,7 +53,7 @@
     method: POST
     body_format: json
     body:
-      model: gemma3:12b
+      model: mistral:7b
       prompt: |
         Rewrite the following WordPress *page* in a friendly, concise style.
         Keep every <img …> tag exactly unchanged.
