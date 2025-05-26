@@ -49,7 +49,7 @@
 
 - name: Generate new text with Ollama
   uri:
-    url: "https://03e2-179-52-155-242.ngrok-free.app/api/generate"
+    url: "https://4a16-179-52-155-242.ngrok-free.app/api/generate"
     method: POST
     body_format: json
     body:
