@@ -62,7 +62,7 @@
         {{ old_content.results[loop_index].stdout }}
       stream: false
     status_code: 200
-    timeout: 300
+    timeout: 3000
     validate_certs: false
   register: ollama_reply
   retries: 3
