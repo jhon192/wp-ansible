@@ -62,16 +62,11 @@
         {{ old_content.results[loop_index].stdout }}
       stream: false
     status_code: 200
-    timeout: 3000
-    validate_certs: false
+    timeout: 600
   register: ollama_reply
-  retries: 3
-  delay: 10
-  until: ollama_reply is success
   loop: "{{ content_ids.stdout_lines }}"
   loop_control:
     index_var: loop_index
-    pause: 10
   when: content_ids.stdout_lines | length > 0
 
 - name: Update Content with Generated Text
