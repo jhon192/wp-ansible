@@ -49,11 +49,11 @@
 
 - name: Generate new text with Ollama
   uri:
-    url: "https://16ce-186-7-97-57.ngrok-free.app/api/generate"
+    url: "https://03e2-179-52-155-242.ngrok-free.app/api/generate"
     method: POST
     body_format: json
     body:
-      model: mistral:7b
+      model: llama3:8b
       prompt: |
         Rewrite the following WordPress *page* in a friendly, concise style.
         Keep every <img …> tag exactly unchanged.
