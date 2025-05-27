@@ -97,8 +97,6 @@
     --allow-root
     --post_content="$(cat /tmp/wp-content-{{ content_ids.stdout_lines[0] }}.html)"
     --meta_input='{"_wp_page_template":"{{ page_template.stdout | default("default") }}"}'
-    --skip-plugins
-    --skip-themes
   register: update_results
   changed_when: update_results.rc == 0
   when: content_ids.stdout_lines | length > 0
