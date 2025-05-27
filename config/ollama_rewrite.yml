@@ -84,7 +84,7 @@
 
 - name: Get Current Page Template
   ansible.builtin.command: >
-    wp post get {{ content_ids.stdout_lines[0] }} --field=page_template
+    wp post meta get {{ content_ids.stdout_lines[0] }} _wp_page_template
     --path=/home/semaphore/{{ site.linux_user }}
     --allow-root
   register: page_template
@@ -96,7 +96,7 @@
     --path=/home/semaphore/{{ site.linux_user }}
     --allow-root
     --post_content="$(cat /tmp/wp-content-{{ content_ids.stdout_lines[0] }}.html)"
-    --page_template="{{ page_template.stdout | default('default') }}"
+    --meta_input='{"_wp_page_template":"{{ page_template.stdout | default("default") }}"}'
     --skip-plugins
     --skip-themes
   register: update_results
