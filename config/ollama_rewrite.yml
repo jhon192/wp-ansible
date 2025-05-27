@@ -1,8 +1,11 @@
 ---
-- name: Get Home Page ID
-  ansible.builtin.set_fact:
-    content_ids:
-      stdout_lines: ["11"]
+- name: Get List of All Posts
+  ansible.builtin.command: >
+    wp post list --post_type=post --field=ID
+    --path=/home/semaphore/{{ site.linux_user }}
+    --allow-root
+  register: content_ids
+  changed_when: false
 
 - name: Fetch Current Content
   ansible.builtin.command: >
@@ -71,32 +74,21 @@
     pause: 5
   when: content_ids.stdout_lines | length > 0
 
-- name: Debug Ollama Response
-  ansible.builtin.debug:
-    msg: "Response length: {{ ollama_reply.results[0].json.response | length }}"
-
-- name: Create temporary content file
+- name: Create temporary content files
   ansible.builtin.copy:
-    content: "{{ ollama_reply.results[0].json.response }}"
-    dest: "/tmp/wp-content-{{ content_ids.stdout_lines[0] }}.html"
+    content: "{{ item.1.json.response }}"
+    dest: "/tmp/wp-content-{{ item.0 }}.html"
     mode: '0644'
-  when: content_ids.stdout_lines | length > 0
-
-- name: Get Current Page Template
-  ansible.builtin.command: >
-    wp post meta get {{ content_ids.stdout_lines[0] }} _wp_page_template
-    --path=/home/semaphore/{{ site.linux_user }}
-    --allow-root
-  register: page_template
+  loop: "{{ content_ids.stdout_lines | zip(ollama_reply.results) | list }}"
   when: content_ids.stdout_lines | length > 0
 
 - name: Update Content with Generated Text
   ansible.builtin.command: >
-    wp post update {{ content_ids.stdout_lines[0] }} 
+    wp post update {{ item.0 }} 
     --path=/home/semaphore/{{ site.linux_user }}
     --allow-root
-    --post_content="$(cat /tmp/wp-content-{{ content_ids.stdout_lines[0] }}.html)"
-    --meta_input='{"_wp_page_template":"{{ page_template.stdout | default("default") }}"}'
+    --post_content="$(cat /tmp/wp-content-{{ item.0 }}.html)"
+  loop: "{{ content_ids.stdout_lines }}"
   register: update_results
   changed_when: update_results.rc == 0
   when: content_ids.stdout_lines | length > 0
@@ -108,16 +100,19 @@
 
 - name: Clean up temporary files
   ansible.builtin.file:
-    path: "/tmp/wp-content-{{ content_ids.stdout_lines[0] }}.html"
+    path: "/tmp/wp-content-{{ item }}.html"
     state: absent
+  loop: "{{ content_ids.stdout_lines }}"
   when: content_ids.stdout_lines | length > 0
 
 - name: Debug Update Results
   ansible.builtin.debug:
-    msg: "Update status: {{ update_results.rc }} - Output: {{ update_results.stdout_lines | default([]) }} - Error: {{ update_results.stderr_lines | default([]) }}"
+    msg: "Post {{ item.0 }} update status: {{ item.1.rc }} - Output: {{ item.1.stdout_lines | default([]) }} - Error: {{ item.1.stderr_lines | default([]) }}"
+  loop: "{{ content_ids.stdout_lines | zip(update_results.results) | list }}"
   when: content_ids.stdout_lines | length > 0
 
 - name: Log Content Updates
   ansible.builtin.debug:
-    msg: "Home page on {{ site.domain }} rewritten by Ollama"
+    msg: "Post {{ item }} on {{ site.domain }} rewritten by Ollama"
+  loop: "{{ content_ids.stdout_lines }}"
   when: content_ids.stdout_lines | length > 0
