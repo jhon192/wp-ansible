@@ -1,7 +1,7 @@
 ---
-- name: Get List of All Posts
+- name: Get List of All Pages
   ansible.builtin.command: >
-    wp post list --post_type=post --field=ID
+    wp post list --post_type=page --field=ID
     --path=/home/semaphore/{{ site.linux_user }}
     --allow-root
   register: content_ids
@@ -55,7 +55,7 @@
     body:
       model: astra-page-writer:latest
       prompt: |
-        Rewrite the following WordPress *page* in a friendly, concise style.
+        Rewrite the following WordPress page in a friendly, concise style.
         Keep every <img …> tag exactly unchanged.
 
         ORIGINAL:
@@ -107,12 +107,12 @@
 
 - name: Debug Update Results
   ansible.builtin.debug:
-    msg: "Post {{ item.0 }} update status: {{ item.1.rc }} - Output: {{ item.1.stdout_lines | default([]) }} - Error: {{ item.1.stderr_lines | default([]) }}"
+    msg: "Page ID {{ item.0 }} update status: {{ item.1.rc }} - Output: {{ item.1.stdout_lines | default([]) }} - Error: {{ item.1.stderr_lines | default([]) }}"
   loop: "{{ content_ids.stdout_lines | zip(update_results.results) | list }}"
   when: content_ids.stdout_lines | length > 0
 
 - name: Log Content Updates
   ansible.builtin.debug:
-    msg: "Post {{ item }} on {{ site.domain }} rewritten by Ollama"
+    msg: "Page ID {{ item }} on {{ site.domain }} rewritten by Ollama"
   loop: "{{ content_ids.stdout_lines }}"
   when: content_ids.stdout_lines | length > 0
