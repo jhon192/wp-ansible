@@ -142,11 +142,11 @@
     when: wp_app_password | length > 0
     ignore_errors: true
 
-  ###########################################################################
-  # Generate replacement content with Ollama and inject it into WordPress
-  ###########################################################################
-  - name: Process posts with Ollama for each site
-    ansible.builtin.include_tasks: ollama_rewrite.yml
-    loop: "{{ wordpress_sites }}"
-    loop_control:
-      loop_var: site
+  # ###########################################################################
+  # # Generate replacement content with Ollama and inject it into WordPress
+  # ###########################################################################
+  # - name: Process posts with Ollama for each site
+  #   ansible.builtin.include_tasks: ollama_rewrite.yml
+  #   loop: "{{ wordpress_sites }}"
+  #   loop_control:
+  #     loop_var: site
