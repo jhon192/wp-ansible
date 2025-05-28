@@ -118,7 +118,12 @@
 #   delay: 5
 #   retries: 15
 #   when: ping_result.rc == 0
-  
+
+
+- name: debug domain {{ site.domain }}
+  ansible.builtin.debug:
+    var: site.domain
+  when: verbosity | default(0) | int > 0
 
 - name: Run the WordPress installation
   ansible.builtin.uri:
@@ -128,7 +133,6 @@
       weblog_title={{ site.website_name }}
       &user_name={{ site.wp_admin_user }}
       &admin_password={{ site.wp_admin_pass }}
-      &admin_password2={{ site.wp_admin_pass }}
       &admin_email={{ site.wp_admin_email }}
     headers:
       Content-Type: "application/x-www-form-urlencoded"
