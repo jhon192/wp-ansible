@@ -1,0 +1,99 @@
+---
+- name: Robust Multi-Domain WordPress Setup
+  hosts: localhost
+  become: true
+
+  #################################################################
+  # ------------ GLOBAL VARS (tweak as needed) ------------------- #
+  #################################################################
+  vars:
+    ansible_remote_tmp: "/tmp/.ansible-123324453"
+
+    # ─── Per-site data (you already had these) ─────────────────── #
+    wordpress_sites:
+      - domain: "{{ DOMAIN }}"
+        host: "{{ HOST }}"
+        db_name: "{{ DB_NAME }}"
+        db_user: "{{ DB_USER }}"
+        db_pass: "{{ DB_PASS }}"
+        access_db_user: "{{ ACCESS_DB_USER }}"
+        access_db_pass: "{{ ACCESS_DB_PASS }}"
+        wp_admin_user: "{{  WP_ADMIN_USER }}"
+        wp_admin_pass: "{{ WP_ADMIN_PASS }}"
+        wp_admin_email: "{{ WP_ADMIN_EMAIL }}"
+        website_name: "{{ WEBSITE_NAME }}"
+        linux_user: "{{ LINUX_USER }}"
+        template_id: "{{ TEMPLATE_ID  }}"
+
+    # ─── New: shared WP bootstrap settings (can be overridden per-site) ─── #
+    theme_slug: astra
+    starter_pages: [Home, About, Contact]
+    plugins:
+      - { slug: contact-form-7,        state: present, activate: true }
+      - { slug: one-click-demo-import, state: latest,  activate: true }
+    menu_items:
+      home:    "Home"
+      about:   "About"
+      contact: "Contact"
+    child_theme: true
+    custom_templates: []          
+
+  #################################################################
+  tasks:
+  - name: Debug site list (optional)
+    debug:
+      var: item
+    loop: "{{ wordpress_sites }}"
+    when: verbosity | default(0) | int > 0
+
+    # ── Base packages ────────────────────────────────────────────── #
+    
+  - name: Add themes in your domain
+    include_tasks: themes_installation.yml
+    loop: "{{ wordpress_sites }}"
+    loop_control:
+      loop_var: site
+
+  - name: Create WP Application Password for {{ site.wp_admin_user }}
+    command: >
+      wp user application-password create
+      "{{ site.wp_admin_user }}"
+      "{{ site.linux_user | default('ansible-app') }}"
+      --porcelain
+      --path=/home/semaphore/{{ site.linux_user }}
+      --allow-root
+      --skip-plugins --skip-themes
+    register: app_pw
+    loop: "{{ wordpress_sites }}"
+    loop_control:
+        loop_var: site
+    failed_when: app_pw.rc != 0
+    changed_when: "'Error:' not in app_pw.stdout"
+    ignore_errors: true
+
+    # ── Normalize the password value no matter how Ansible wrapped it ───────────
+  - name: Capture just the password string
+    set_fact:
+      wp_app_password: >-
+        {% if app_pw.stdout is defined %}
+          {{ app_pw.stdout }}
+        {% elif app_pw.results is defined and app_pw.results|length > 0 %}
+          {{ app_pw.results[0].stdout }}
+        {% else %}
+          ''
+        {% endif %}
+
+  - name: Display the new application password (human-friendly)
+    debug:
+      msg: "App-Password {{ wp_app_password }}"
+    when: wp_app_password | length > 0
+    ignore_errors: true
+
+  # ###########################################################################
+  # # Generate replacement content with Ollama and inject it into WordPress
+  # ###########################################################################
+  # - name: Process posts with Ollama for each site
+  #   ansible.builtin.include_tasks: ollama_rewrite.yml
+  #   loop: "{{ wordpress_sites }}"
+  #   loop_control:
+  #     loop_var: site
