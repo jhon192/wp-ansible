@@ -120,21 +120,21 @@
 #   when: ping_result.rc == 0
   
 
-# - name: Run the WordPress installation
-#   ansible.builtin.uri:
-#     url: "http://{{ site.domain }}/wp-admin/install.php?step=2"
-#     method: POST
-#     body: >
-#       weblog_title={{ site.website_name }}
-#       &user_name={{ site.wp_admin_user }}
-#       &admin_password={{ site.wp_admin_pass }}
-#       &admin_password2={{ site.wp_admin_pass }}
-#       &admin_email={{ site.wp_admin_email }}
-#     headers:
-#       Content-Type: "application/x-www-form-urlencoded"
-#     status_code: 200
-#   register: wordpress_install
-#   until:   wordpress_install.status == 200   # Repite si no es 200
-#   retries: 15                                 # Máx. 5 intentos
-#   delay:   5                                 # 2 s entre intentos
-#   ignore_errors: true
+- name: Run the WordPress installation
+  ansible.builtin.uri:
+    url: "http://{{ site.domain }}/wp-admin/install.php?step=2"
+    method: POST
+    body: >
+      weblog_title={{ site.website_name }}
+      &user_name={{ site.wp_admin_user }}
+      &admin_password={{ site.wp_admin_pass }}
+      &admin_password2={{ site.wp_admin_pass }}
+      &admin_email={{ site.wp_admin_email }}
+    headers:
+      Content-Type: "application/x-www-form-urlencoded"
+    status_code: 200
+  register: wordpress_install
+  until:   wordpress_install.status == 200   # Repite si no es 200
+  retries: 15                                 # Máx. 5 intentos
+  delay:   5                                 # 2 s entre intentos
+  ignore_errors: true
