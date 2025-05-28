@@ -109,14 +109,14 @@
     enabled: true
 
 
-# - name: waiting for the 80 port
-#   ansible.builtin.wait_for:
-#     host: "{{ site.domain }}"
-#     port: 80
-#     state: started        # Espera hasta que el puerto responda
-#     timeout: 180           # Máx. 3 min
-#   delay: 5
-#   retries: 15
+- name: waiting for the 80 port
+  ansible.builtin.wait_for:
+    host: "{{ site.domain }}"
+    port: 80
+    state: started        # Espera hasta que el puerto responda
+    timeout: 180           # Máx. 3 min
+  delay: 5
+  retries: 15
   
 
 - name: Run the WordPress installation
