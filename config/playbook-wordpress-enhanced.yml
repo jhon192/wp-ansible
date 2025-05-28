@@ -95,52 +95,52 @@
 
 
   # ── Loop over each domain: delegate to include file ──────────── #
-  - name: Deploy each WordPress site
-    include_tasks: wordpress_site_setup.yml
-    loop: "{{ wordpress_sites }}"
-    loop_control:
-      loop_var: site
+  # - name: Deploy each WordPress site
+  #   include_tasks: wordpress_site_setup.yml
+  #   loop: "{{ wordpress_sites }}"
+  #   loop_control:
+  #     loop_var: site
   
-  - name: Add themes in your domain
-    include_tasks: themes_installation.yml
-    loop: "{{ wordpress_sites }}"
-    loop_control:
-      loop_var: site
+  # - name: Add themes in your domain
+  #   include_tasks: themes_installation.yml
+  #   loop: "{{ wordpress_sites }}"
+  #   loop_control:
+  #     loop_var: site
 
-  - name: Create WP Application Password for {{ site.wp_admin_user }}
-    command: >
-      wp user application-password create
-      "{{ site.wp_admin_user }}"
-      "{{ site.linux_user | default('ansible-app') }}"
-      --porcelain
-      --path=/home/semaphore/{{ site.linux_user }}
-      --allow-root
-      --skip-plugins --skip-themes
-    register: app_pw
-    loop: "{{ wordpress_sites }}"
-    loop_control:
-        loop_var: site
-    failed_when: app_pw.rc != 0
-    changed_when: "'Error:' not in app_pw.stdout"
-    ignore_errors: true
+  # - name: Create WP Application Password for {{ site.wp_admin_user }}
+  #   command: >
+  #     wp user application-password create
+  #     "{{ site.wp_admin_user }}"
+  #     "{{ site.linux_user | default('ansible-app') }}"
+  #     --porcelain
+  #     --path=/home/semaphore/{{ site.linux_user }}
+  #     --allow-root
+  #     --skip-plugins --skip-themes
+  #   register: app_pw
+  #   loop: "{{ wordpress_sites }}"
+  #   loop_control:
+  #       loop_var: site
+  #   failed_when: app_pw.rc != 0
+  #   changed_when: "'Error:' not in app_pw.stdout"
+  #   ignore_errors: true
 
-   # ── Normalize the password value no matter how Ansible wrapped it ───────────
-  - name: Capture just the password string
-    set_fact:
-      wp_app_password: >-
-        {% if app_pw.stdout is defined %}
-          {{ app_pw.stdout }}
-        {% elif app_pw.results is defined and app_pw.results|length > 0 %}
-          {{ app_pw.results[0].stdout }}
-        {% else %}
-          ''
-        {% endif %}
+  #  # ── Normalize the password value no matter how Ansible wrapped it ───────────
+  # - name: Capture just the password string
+  #   set_fact:
+  #     wp_app_password: >-
+  #       {% if app_pw.stdout is defined %}
+  #         {{ app_pw.stdout }}
+  #       {% elif app_pw.results is defined and app_pw.results|length > 0 %}
+  #         {{ app_pw.results[0].stdout }}
+  #       {% else %}
+  #         ''
+  #       {% endif %}
 
-  - name: Display the new application password (human-friendly)
-    debug:
-      msg: "App-Password {{ wp_app_password }}"
-    when: wp_app_password | length > 0
-    ignore_errors: true
+  # - name: Display the new application password (human-friendly)
+  #   debug:
+  #     msg: "App-Password {{ wp_app_password }}"
+  #   when: wp_app_password | length > 0
+  #   ignore_errors: true
 
   # ###########################################################################
   # # Generate replacement content with Ollama and inject it into WordPress
