@@ -95,11 +95,11 @@
 
 
   # ── Loop over each domain: delegate to include file ──────────── #
-  # - name: Deploy each WordPress site
-  #   include_tasks: wordpress_site_setup.yml
-  #   loop: "{{ wordpress_sites }}"
-  #   loop_control:
-  #     loop_var: site
+  - name: Deploy each WordPress site
+    include_tasks: wordpress_site_setup.yml
+    loop: "{{ wordpress_sites }}"
+    loop_control:
+      loop_var: site
   
   # - name: Add themes in your domain
   #   include_tasks: themes_installation.yml
