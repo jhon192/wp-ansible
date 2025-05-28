@@ -114,7 +114,9 @@
     host: "{{ site.domain }}"
     port: 80
     state: started        # Espera hasta que el puerto responda
-    timeout: 120           # Máx. 1 min
+    timeout: 180           # Máx. 3 min
+    delay: 5
+    retries: 15
 
 - name: Run the WordPress installation
   ansible.builtin.uri:
