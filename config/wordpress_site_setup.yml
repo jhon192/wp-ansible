@@ -127,12 +127,13 @@
 
 - name: Run the WordPress installation
   ansible.builtin.uri:
-    url: "http://{{ site.domain }}/wp-admin/install.php?step=2"
+    url: "https://{{ site.domain }}/wp-admin/install.php?step=2"
     method: POST
     body: >
       weblog_title={{ site.website_name }}
       &user_name={{ site.wp_admin_user }}
       &admin_password={{ site.wp_admin_pass }}
+      &admin_password2={{ site.wp_admin_pass }}
       &admin_email={{ site.wp_admin_email }}
     headers:
       Content-Type: "application/x-www-form-urlencoded"
