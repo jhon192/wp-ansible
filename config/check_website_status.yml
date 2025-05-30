@@ -115,6 +115,7 @@
       path: "{{ fetch_dest_root }}"
       state: directory
       mode: "0755"
+    ignore_errors: true
 
   - name: Descargar logs al controlador
     fetch:
