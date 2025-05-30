@@ -5,19 +5,18 @@
 
 - name: Diagnosticar errores 500 de Apache (sitios en /home/semaphore)
   hosts: localhost
-  gather_facts: yes
-  become: yes
+  gather_facts: true
+  become: true
 
   vars:
     ansible_remote_tmp: "/tmp/.ansible-123324453"
     ansible_connection: local
 
     apache_service_name: "{{ 'httpd' if ansible_os_family == 'RedHat' else 'apache2' }}"
-    php_fpm_service_name: ""     # Pon '' si no usas PHP-FPM
+    php_fpm_service_name: ""
     error_log_patterns: "*error*.log"
     lines_to_fetch: 200
     fetch_dest: "./logs/{{ inventory_hostname }}/"
-    # Directorios donde suele vivir la conf de VirtualHosts
     vhost_conf_paths:
       - "/etc/apache2/sites-enabled"
       - "/etc/apache2/conf-enabled"
@@ -103,7 +102,7 @@
     file:
       path: "{{ fetch_dest }}"
       state: directory
-      mode: "0755"
+      mode: "0755
 
   - name: Descargar logs al controlador
     fetch:
@@ -114,6 +113,38 @@
     when: error_logs.matched > 0
     loop_control:
       label: "{{ item.path | basename }}"
+
+
+  ###############################################
+  # Variables (puedes moverlas a vars:)
+  ###############################################
+  - set_fact:
+      fetch_dest_root: "/tmp/ansible_logs"      # <— cámbiala si lo prefieres
+
+  ###############################################
+  # Crear directorio local en el controlador
+  ###############################################
+  - name: Crear carpeta local para los logs
+    delegate_to: localhost
+    run_once: true
+    file:
+      path: "{{ fetch_dest_root }}"
+      state: directory
+      mode: "0755"
+
+  ###############################################
+  # Descargar cada log que acabas de generar
+  ###############################################
+  - name: Descargar logs al controlador
+    fetch:
+      src: "/tmp/{{ inventory_hostname }}_{{ item.path | basename }}"
+      dest: "{{ fetch_dest_root }}/{{ inventory_hostname }}/"
+      flat: yes
+    loop: "{{ error_logs.files }}"
+    when: error_logs.matched > 0
+    loop_control:
+      label: "{{ item.path | basename }}"
+
 
   # 6. Revisar permisos de cada DocumentRoot ------------------------------------
   - name: Verificar permisos/propietarios
