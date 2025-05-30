@@ -67,7 +67,7 @@
       changed_when: false
 
     - name: (Des)habilitar site example.com
-      ansible.builtin.command: a2dissite webmachine.siteffect.com.conf && a2ensite webmachine.siteffect.com.conf
+      ansible.builtin.command: a2ensite webmachine.siteffect.com.conf
       notify: reload_apache
 
   handlers:
