@@ -17,7 +17,7 @@
 
     # Nombre de los servicios
     apache_service_name: "{{ 'httpd' if ansible_os_family == 'RedHat' else 'apache2' }}"
-    php_fpm_service_name: "php8.2-fpm"               # '' si no usas PHP-FPM
+    php_fpm_service_name: ""               # '' si no usas PHP-FPM
     vhost_conf_paths:
       - "/etc/apache2/sites-enabled"
       - "/etc/apache2/conf-enabled"
