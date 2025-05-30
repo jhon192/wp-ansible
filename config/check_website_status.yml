@@ -1,5 +1,3 @@
-
-
 - name: Verificar salud de RAM, CPU, Apache y almacenamiento
   hosts: all
   gather_facts: yes
