@@ -97,12 +97,23 @@
     loop: "{{ error_logs.files }}"
     when: error_logs.matched > 0
 
+  - name: Crear carpeta local donde guardar los logs
+    delegate_to: localhost
+    run_once: true
+    file:
+      path: "{{ fetch_dest }}"
+      state: directory
+      mode: "0755"
+
   - name: Descargar logs al controlador
     fetch:
-      src: "/tmp/{{ inventory_hostname }}_*"
+      src: "/tmp/{{ inventory_hostname }}_{{ item.path | basename }}"
       dest: "{{ fetch_dest }}"
       flat: yes
+    loop: "{{ error_logs.files }}"
     when: error_logs.matched > 0
+    loop_control:
+      label: "{{ item.path | basename }}"
 
   # 6. Revisar permisos de cada DocumentRoot ------------------------------------
   - name: Verificar permisos/propietarios
