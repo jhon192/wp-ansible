@@ -69,3 +69,8 @@
     - name: recargar apache2
       ansible.builtin.command: systemctl reload apache2
       changed_when: false
+
+  handlers:
+    - name: mostrar_estado
+      ansible.builtin.command: systemctl status --no-pager apache2
+      changed_when: false
