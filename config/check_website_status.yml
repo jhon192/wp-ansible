@@ -24,11 +24,24 @@
             | list
           }}
 
+    - name: Mostrar los sitios de Apache encontrados
+      debug:
+        var: apache_sites
+
     - name: Mostrar espacio libre por punto de montaje
       ansible.builtin.debug:
-        msg: "{{ item.mount }} ➜ {{ item.size_available | human_readable(size=True, binary=True) }} libres (de {{ item.size_total | human_readable(size=True, binary=True) }})"
+        msg: "{{ item.mount }} → {{ item.size_available | filesizeformat(binary=True) }} libres (de {{ item.size_total | filesizeformat(binary=True) }})"
       loop: "{{ ansible_mounts }}"
       loop_control:
         label: "{{ item.mount }}"
-      tags: almacenamiento  
-    
+      tags: almacenamiento
+      ignore_errors: true
+
+    - name: Mostrar espacio libre por punto de montaje
+      ansible.builtin.debug:
+        msg: "{{ item.mount }} → {{ item.size_available | human_readable(binary=True) }} libres (de {{ item.size_total | human_readable(binary=True) }})"
+      loop: "{{ ansible_mounts }}"
+      loop_control:
+        label: "{{ item.mount }}"
+      tags: almacenamiento
+      ignore_errors: true
