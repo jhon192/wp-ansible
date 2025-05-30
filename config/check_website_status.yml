@@ -61,15 +61,15 @@
 
     - name: recargar apache2
       ansible.builtin.command: systemctl reload apache2
-      changed_when: false
+      notify: mostrar_estado
 
     - name: (Des)habilitar site example.com
-      ansible.builtin.command: a2ensite webmachine.siteffect.com.conf
-      
+      ansible.builtin.command: a2ensite webmachine.siteffect.com.conf && a2dissite webmachine.siteffect.com.conf
+      notify: mostrar_estado
+
     - name: recargar apache2
       ansible.builtin.command: systemctl restart apache2
-      changed_when: false
-
+      notify: mostrar_estado
   handlers:
     - name: mostrar_estado
       ansible.builtin.command: systemctl status --no-pager apache2
