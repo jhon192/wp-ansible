@@ -1,6 +1,4 @@
----
-# archivo: verificar_sistema.yml
-# Ejecuta: ansible-playbook verificar_sistema.yml -l webservers
+
 
 - name: Verificar salud de RAM, CPU, Apache y almacenamiento
   hosts: all
@@ -24,10 +22,6 @@
             | list
           }}
 
-    - name: Comprobar almacenamiento disponible en servidores Ubuntu
-      hosts: ubuntu_servers          # Cambia este grupo por el que uses en tu inventario
-      gather_facts: true             # Necesario para obtener ansible_mounts
-
     - name: Mostrar espacio libre por punto de montaje
       ansible.builtin.debug:
         msg: "{{ item.mount }} ➜ {{ item.size_available | human_readable(size=True, binary=True) }} libres (de {{ item.size_total | human_readable(size=True, binary=True) }})"
@@ -35,3 +29,4 @@
       loop_control:
         label: "{{ item.mount }}"
       tags: almacenamiento  
+    
