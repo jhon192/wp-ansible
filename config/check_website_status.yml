@@ -41,7 +41,7 @@
 
 
   - name: Mostrar sitios autodetectados (log)
-    when: apache_sites|length > 0
+    when: apache_sites | length > 0
     debug:
       msg: "Sitios Apache autodetectados: {{ apache_sites | join(', ') }}"
 
@@ -73,7 +73,7 @@
 
   # ---------------- Apache (sitios) ----------------
   - name: Verificar respuesta HTTP 200 de cada sitio
-    when: apache_sites|length > 0
+    when: apache_sites | length > 0
     ansible.builtin.uri:
       url: "http://127.0.0.1"       # se prueba localmente
       headers:
@@ -87,7 +87,7 @@
     ignore_errors: yes
 
   - name: Evaluar resultados de sitios
-    when: apache_sites|length > 0
+    when: apache_sites | length > 0
     assert:
       that: "{{ resultados_sitios.results | map(attribute='status') | list | difference([200]) | length == 0 }}"
       fail_msg: >-
@@ -100,7 +100,7 @@
       success_msg: "Todos los sitios responden 200 OK"
 
   - name: Aviso si no se detectaron sitios
-    when: apache_sites|length == 0
+    when: apache_sites | length == 0
     debug:
       msg: "No se detectaron VirtualHosts. Comprueba que Apache esté configurado y que el comando {{ apache_ctl_cmd }} -S se ejecute sin errores."
 
