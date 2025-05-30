@@ -4,7 +4,7 @@
 # Autor: ChatGPT (o3) — Mayo 2025
 
 - name: Diagnosticar y recopilar evidencias de errores 500
-  hosts: webservers
+  hosts: localhost
   become: yes
   gather_facts: yes
 
