@@ -33,15 +33,12 @@
     when: (apache_sites | default([])) | length == 0 and apachectl_out.rc == 0
     set_fact:
       apache_sites: >-
-        {{
-          apachectl_out.stdout_lines
-          | select('search', 'namevhost')           # solo las líneas con 'namevhost'
-          | map('regex_replace',
-                '.*namevhost\\s+([^\\s:]+).*',      # captura el host hasta un espacio o ':'
-                '\\1')
-          | reject('match', '^\\d+\\.\\d+\\.\\d+\\.\\d+$')  # descarta IPs (127.0.1.1)
-          | list | sort | unique                   # deduplica (compatible 2.9+)
-        }}
+        {{ apachectl_out.stdout_lines
+          | select('search', 'namevhost')
+          | map('regex_replace', '.*namevhost\\s+([^\\s:]+).*', '\\1')
+          | reject('match', '^\\d+\\.\\d+\\.\\d+\\.\\d+$')
+          | list | sort | unique }}
+
 
   - name: Mostrar sitios autodetectados (log)
     when: apache_sites|length > 0
