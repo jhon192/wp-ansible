@@ -23,22 +23,20 @@
   tasks:
   # ---------- AUTODETECCIÓN DE SITIOS ----------
   - name: Detectar VirtualHosts con apachectl -S
-    when: apache_sites|length == 0
+    when: (apache_sites | default([])) | length == 0
     command: "{{ apache_ctl_cmd }} -S"
     register: apachectl_out
     changed_when: false
-    failed_when: false          # no abortar si apachectl da warning
+    failed_when: false            # no abortar si apachectl da warning
 
   - name: Extraer nombres de host únicos
-    when: apache_sites|length == 0 and apachectl_out.rc == 0
+    when: (apache_sites | default([])) | length == 0 and apachectl_out.rc == 0
     set_fact:
       apache_sites: >-
-        {{
-          (apachectl_out.stdout | regex_findall('namevhost\\s+(\\S+)'))
-          | map('regex_replace', ':\\d+$', '')   # quita :80, :443…
-          | unique
-          | list
-        }}
+        {{ apachectl_out.stdout
+          | regex_findall('(?:port\\s+\\d+\\s+)?namevhost\\s+(\\S+)')
+          | map('regex_replace', ':\\d+$', '')          # quita :80, :443…
+          | list | unique }}
 
   - name: Mostrar sitios autodetectados (log)
     when: apache_sites|length > 0
