@@ -58,6 +58,10 @@
       when: apache_configtest.rc == 0
       notify: mostrar_estado
 
+    - name: (Des)habilitar site example.com
+      ansible.builtin.command: a2dissite webmachine.siteffect.com.conf && a2ensite webmachine.siteffect.com.conf
+      notify: reload_apache
+
   handlers:
     - name: mostrar_estado
       ansible.builtin.command: systemctl status --no-pager apache2
