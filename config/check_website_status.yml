@@ -1,15 +1,15 @@
 ---
 # diagnostico_apache_completo.yml
-# Diagnóstico de errores 500 en Apache con sitios en /home/semaphore
+# Diagnóstico de errores 500 en Apache (sitios bajo /home/semaphore)
 # Autor: ChatGPT (o3) — Mayo 2025
 
-- name: Diagnosticar y recopilar evidencias de errores 500
+- name: Diagnosticar y recopilar evidencias
   hosts: localhost
-  become: yes
-  gather_facts: yes
+  become: true
+  gather_facts: true
 
   ######################################################################
-  # VARIABLES – ajusta solo si es necesario
+  # VARIABLES (ajusta según tu entorno)
   ######################################################################
   vars:
     ansible_remote_tmp: "/tmp/.ansible-123324453"
@@ -17,27 +17,21 @@
 
     # Nombre de los servicios
     apache_service_name: "{{ 'httpd' if ansible_os_family == 'RedHat' else 'apache2' }}"
-    php_fpm_service_name: ""        # déjalo vacío '' si NO usas PHP-FPM
-
-    # Dónde buscar la configuración de VirtualHosts
+    php_fpm_service_name: "php8.2-fpm"               # '' si no usas PHP-FPM
     vhost_conf_paths:
       - "/etc/apache2/sites-enabled"
       - "/etc/apache2/conf-enabled"
       - "/etc/httpd/conf.d"
-
-    # Logs
     error_log_patterns: "*error*.log"
-    lines_to_fetch: 200                       # últimas líneas a copiar
-
-    # Carpeta local (en tu máquina) 100 % escribible
-    fetch_dest_root: "/tmp/ansible_logs"
+    lines_to_fetch: 200
+    fetch_dest_root: "{{ ansible_env.HOME }}/ansible_logs"   # <— carpeta siempre escribible
 
   ######################################################################
-  # TAREAS
+  # TAREAS PRINCIPALES
   ######################################################################
   tasks:
-  # 1. Validación rápida de Apache -------------------------------------
-  - name: Validar sintaxis de Apache (apachectl -t)
+  # 1. Validar sintaxis -------------------------------------------------
+  - name: Validar sintaxis de Apache
     command: apachectl -t
     register: apache_syntax
     ignore_errors: true
@@ -50,9 +44,9 @@
     when: apache_syntax.rc != 0
 
   - debug:
-      msg: "✓ Sintaxis OK: {{ apache_syntax.stdout | trim }}"
+      msg: "✓ Sintaxis OK"
 
-  # 2. Asegurar servicios activos --------------------------------------
+  # 2. Asegurar servicios ------------------------------------------------
   - name: Reiniciar y habilitar {{ apache_service_name }}
     service:
       name: "{{ apache_service_name }}"
@@ -66,35 +60,34 @@
       enabled: yes
     when: php_fpm_service_name | length > 0
 
-  # 3. Descubrir los DocumentRoot reales --------------------------------
-  - name: Extraer rutas DocumentRoot desde la conf de Apache
-    shell: |
-      grep -REi '^[[:space:]]*DocumentRoot[[:space:]]+' {{ vhost_conf_paths | join(' ') }} 2>/dev/null \
-      | awk '{print $2}' | sort -u
-    register: docroot_raw
+  # 3. Descubrir DocumentRoot reales -----------------------------------
+  - name: Extraer DocumentRoot desde la conf
+    shell: >
+      grep -REi '^[[:space:]]*DocumentRoot[[:space:]]+' {{ vhost_conf_paths | join(' ') }} 2>/dev/null |
+      awk '{print $2}' | sort -u
     changed_when: false
+    register: docroot_raw
 
-  - name: Filtrar DocumentRoot solo dentro de /home/semaphore
+  - name: Filtrar rutas dentro de /home/semaphore
     set_fact:
-      docroots: "{{ docroot_raw.stdout_lines
-                    | select('search', '^/home/semaphore') | list }}"
+      docroots: "{{ docroot_raw.stdout_lines | select('search', '^/home/semaphore') | list }}"
 
   - debug:
       msg: "⚠️  No se encontraron DocumentRoot en /home/semaphore."
     when: docroots | length == 0
 
-  # 4. Probar rápidamente HTTP local ------------------------------------
-  - name: curl localhost para obtener el código HTTP
+  # 4. Probar HTTP local -------------------------------------------------
+  - name: curl localhost
     shell: curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1/
     register: curl_root
     changed_when: false
     failed_when: false
 
   - debug:
-      msg: "Código HTTP raíz de localhost: {{ curl_root.stdout }}"
+      msg: "Código HTTP raíz: {{ curl_root.stdout }}"
 
-  # 5. Localizar y copiar logs de error ---------------------------------
-  - name: Buscar archivos de error log
+  # 5. Guardar últimas líneas de los logs -------------------------------
+  - name: Localizar error logs
     find:
       paths:
         - "/var/log/{{ apache_service_name }}"
@@ -104,25 +97,26 @@
       recurse: yes
     register: error_logs
 
-  - name: Guardar últimas {{ lines_to_fetch }} líneas en /tmp del host remoto
-    shell: |
-      tail -n {{ lines_to_fetch }} {{ item.path }} > \
-        /tmp/{{ inventory_hostname }}_{{ item.path | basename }}
+  - name: Tail de {{ lines_to_fetch }} líneas por log
+    shell: >
+      tail -n {{ lines_to_fetch }} {{ item.path }} >
+      /tmp/{{ inventory_hostname }}_{{ item.path | basename }}
     loop: "{{ error_logs.files }}"
     when: error_logs.matched > 0
 
   ######################################################################
-  # Fase de copia al nodo de control (fetch)
+  # 6. Copiar logs al nodo de control
   ######################################################################
-  - name: Crear carpeta local para los logs
+  - name: Crear carpeta local para logs
     delegate_to: localhost
+    become: false               # ← ¡¡importante!! mismo usuario que fetch
     run_once: true
     file:
       path: "{{ fetch_dest_root }}"
       state: directory
       mode: "0755"
 
-  - name: Descargar logs al nodo de control
+  - name: Descargar logs al controlador
     fetch:
       src: "/tmp/{{ inventory_hostname }}_{{ item.path | basename }}"
       dest: "{{ fetch_dest_root }}/{{ inventory_hostname }}/"
@@ -132,27 +126,25 @@
     loop_control:
       label: "{{ item.path | basename }}"
 
-  # 6. Chequear permisos/propietarios de los sitios ---------------------
-  - name: Obtener permisos y propietarios de cada DocumentRoot
+  # 7. Resumen de permisos ----------------------------------------------
+  - name: Obtener permisos/propietarios
     stat:
       path: "{{ item }}"
     loop: "{{ docroots }}"
     register: doc_stats
     failed_when: false
 
-  - name: Resumen de permisos
+  - name: Mostrar permisos
     debug:
       msg: >
         {{ item.stat.path }}  →  owner={{ item.stat.pw_name }},
         group={{ item.stat.gr_name }}, mode={{ '%04o' % item.stat.mode }}
     loop: "{{ doc_stats.results }}"
 
-  # 7. Mensaje final ----------------------------------------------------
+  # 8. Conclusión --------------------------------------------------------
   - debug:
       msg: |
-        ✅ Diagnóstico terminado.
-        Revisa los archivos copiados en «{{ fetch_dest_root }}/{{ inventory_hostname }}/».
-        Busca mensajes como “PHP Fatal”, “Permission denied” o “Cannot load module”.
-        Asegúrate de que los DocumentRoot tengan permisos 755 (dirs) / 644 (files)
-        con usuario/grupo del proceso web (p.e. www-data) y sin restricciones SELinux.
+        ✅ Diagnóstico completo.
+        Los logs están en «{{ fetch_dest_root }}/{{ inventory_hostname }}/».
+        Revisa mensajes “PHP Fatal…”, “Permission denied…”, etc.
 ...
