@@ -51,35 +51,6 @@
       fail_msg: "¡Alerta! Solo {{ ansible_facts.memfree_mb }} MB libres (< {{ min_memlibre_mb }} MB)"
       success_msg: "Memoria libre OK ({{ ansible_facts.memfree_mb }} MB)"
 
-  - name: Obtener número de vCPU
-    set_fact:
-      vcpus: "{{ ansible_facts.processor_vcpus
-                | default(ansible_facts.processor.count
-                | default(1)) | int }}"
-
-  - name: Obtener carga media 1 minuto
-    set_fact:
-      carga_1m: >-
-        {{
-          ansible_facts.loadavg
-          | dict2items
-          | selectattr('key', 'match', '^1(|m|min|_min)?$')
-          | map(attribute='value')
-          | list
-          | first | float
-        }}
-
-  - name: Calcular carga por vCPU
-    set_fact:
-      carga_por_cpu: "{{ carga_1m / vcpus }}"
-
-  - name: Comprobar carga CPU 1 min / vCPU
-    assert:
-      that:
-        - carga_por_cpu <= max_carga_cpu_1m
-      fail_msg: "¡CPU alta! Carga 1 min/{{ vcpus }} vCPU = {{ carga_por_cpu | round(2) }} (> {{ max_carga_cpu_1m }})"
-      success_msg: "Carga CPU OK ({{ carga_por_cpu | round(2) }})"
-
   - name: Recoger estado de servicios
     ansible.builtin.service_facts:
 
