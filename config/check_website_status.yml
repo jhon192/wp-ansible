@@ -7,103 +7,31 @@
   gather_facts: yes
   become: yes                   # necesario para ejecutar apachectl -S
 
-  vars:
-    ansible_remote_tmp: "/tmp/.ansible-123324453"
-    ansible_connection: local
-
-    # ---- Umbrales ajustables ----
-    min_memlibre_mb: 512        # RAM libre mínima aceptable
-    max_carga_cpu_1m: 1.5       # carga promedio 1 min / vCPU
-    min_disco_libre_pct: 15     # % libre mínimo por punto de montaje
-    apache_service_name: "{{ 'httpd' if ansible_facts.os_family == 'RedHat' else 'apache2' }}"
-    apache_ctl_cmd:   "{{ 'apachectl' if ansible_facts.os_family == 'RedHat' else 'apache2ctl' }}"
-    # Si conoces algunos sitios añádelos; si está vacío se autodetectan
-    apache_sites: []
-
   tasks:
-  # ---------- AUTODETECCIÓN DE SITIOS ----------
-  - name: Detectar VirtualHosts con apachectl -S
-    when: (apache_sites | default([])) | length == 0
-    command: "{{ apache_ctl_cmd }} -S"
-    register: apachectl_out
-    changed_when: false
-    failed_when: false            # no abortar si apachectl da warning
+    - name: Obtener información de Apache
+      ansible.builtin.command: apachectl -S
+      register: apachectl_out
+      changed_when: false
 
-  - name: Extraer nombres de host únicos
-    when: (apache_sites | default([])) | length == 0 and apachectl_out.rc == 0
-    set_fact:
-      apache_sites: >-
-        {{ apachectl_out.stdout_lines
-          | select('search', 'namevhost')
-          | map('regex_replace', '.*namevhost\\s+([^\\s:]+).*', '\\1')
-          | reject('match', '^\\d+\\.\\d+\\.\\d+\\.\\d+$')
-          | list | sort | unique }}
+    - name: Extraer nombres de host únicos
+      when: (apache_sites | default([])) | length == 0 and apachectl_out.rc == 0
+      set_fact:
+        apache_sites: >-
+          {{ apachectl_out.stdout_lines
+            | select('search', 'namevhost')
+            | map('regex_replace', ':\\d+$', '')
+            | unique
+            | list
+          }}
 
+    - name: Comprobar almacenamiento disponible en servidores Ubuntu
+      hosts: ubuntu_servers          # Cambia este grupo por el que uses en tu inventario
+      gather_facts: true             # Necesario para obtener ansible_mounts
 
-  - name: Mostrar sitios autodetectados (log)
-    when: apache_sites | length > 0
-    debug:
-      msg: "Sitios Apache autodetectados: {{ apache_sites | join(', ') }}"
-
-  - name: Comprobar memoria libre mínima
-    ansible.builtin.assert:
-      that: ansible_facts.memfree_mb | int >= min_memlibre_mb
-      fail_msg: "¡Alerta! Solo {{ ansible_facts.memfree_mb }} MB libres (< {{ min_memlibre_mb }} MB)"
-      success_msg: "Memoria libre OK ({{ ansible_facts.memfree_mb }} MB)"
-
-  - name: Recoger estado de servicios
-    ansible.builtin.service_facts:
-
-  - name: Comprobar que Apache está activo
-    ansible.builtin.assert:
-      that: ansible_facts.services[apache_service_name].state == 'running'
-      fail_msg: "¡Apache no está activo!"
-      success_msg: "Servicio Apache en ejecución"
-
-  - name: Verificar respuesta HTTP 200 de cada sitio
-    when: apache_sites | length > 0
-    ansible.builtin.uri:
-      url: "http://127.0.0.1"       # se prueba localmente
-      headers:
-        Host: "{{ item }}"
-      return_content: false
-      timeout: 5
-      status_code: 200
-    loop: "{{ apache_sites }}"
-    register: resultados_sitios
-    failed_when: resultados_sitios.status != 200
-    ignore_errors: true
-
-  - name: Evaluar resultados de sitios
-    when: apache_sites | length > 0
-    ansible.builtin.assert:
-      that: "{{ resultados_sitios.results | map(attribute='status') | list | difference([200]) | length == 0 }}"
-      fail_msg: >-
-        Sitios con error: {{
-          resultados_sitios.results
-          | selectattr('status', 'ne', 200)
-          | map(attribute='item')
-          | list | join(', ')
-        }}
-      success_msg: "Todos los sitios responden 200 OK"
-
-  - name: Aviso si no se detectaron sitios
-    when: apache_sites | length == 0
-    ansible.builtin.debug:
-      msg: "No se detectaron VirtualHosts. Comprueba que Apache esté configurado y que el comando {{ apache_ctl_cmd }} -S se ejecute sin errores."
-
-  - name: Revisar espacio libre por punto de montaje
-    loop: "{{ ansible_facts.mounts }}"
-    loop_control:
-      label: "{{ item.mount }}"
-    when: item.size_total > 0 and item.mount not in ['/proc', '/sys', '/dev']
-    ansible.builtin.assert:
-      that:
-        - "((item.size_available | float) / (item.size_total | float) * 100) >= min_disco_libre_pct"
-      fail_msg: >-
-        ¡Poco espacio en {{ item.mount }}!
-        Disponible: {{ ((item.size_available / item.size_total) * 100) | round(1) }} %
-        (umbral: {{ min_disco_libre_pct }} %)
-      success_msg: >-
-        Disco {{ item.mount }} OK:
-        {{ ((item.size_available / item.size_total) * 100) | round(1) }} % libre
+    - name: Mostrar espacio libre por punto de montaje
+      ansible.builtin.debug:
+        msg: "{{ item.mount }} ➜ {{ item.size_available | human_readable(size=True, binary=True) }} libres (de {{ item.size_total | human_readable(size=True, binary=True) }})"
+      loop: "{{ ansible_mounts }}"
+      loop_control:
+        label: "{{ item.mount }}"
+      tags: almacenamiento  
