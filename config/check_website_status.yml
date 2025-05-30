@@ -8,6 +8,9 @@
   become: yes                   # necesario para ejecutar apachectl -S
 
   vars:
+    ansible_remote_tmp: "/tmp/.ansible-123324453"
+    ansible_connection: local
+
     # ---- Umbrales ajustables ----
     min_memlibre_mb: 512        # RAM libre mínima aceptable
     max_carga_cpu_1m: 1.5       # carga promedio 1 min / vCPU
