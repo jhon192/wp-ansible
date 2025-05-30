@@ -13,7 +13,7 @@
     ansible_connection: local
 
     apache_service_name: "{{ 'httpd' if ansible_os_family == 'RedHat' else 'apache2' }}"
-    php_fpm_service_name: "php8.2-fpm"     # Pon '' si no usas PHP-FPM
+    php_fpm_service_name: ""     # Pon '' si no usas PHP-FPM
     error_log_patterns: "*error*.log"
     lines_to_fetch: 200
     fetch_dest: "./logs/{{ inventory_hostname }}/"
