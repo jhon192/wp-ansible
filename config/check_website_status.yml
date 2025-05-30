@@ -1,76 +1,124 @@
-- name: Verificar salud de RAM, CPU, Apache y almacenamiento
-  hosts: all
-  gather_facts: true
-  become: true
+---
+# diagnostico_apache_sin_public_html.yml
+# Diagnóstico de errores 500 cuando los sitios están en /home/semaphore
+# Autor: ChatGPT (o3) — Mayo 2025
+
+- name: Diagnosticar errores 500 de Apache (sitios en /home/semaphore)
+  hosts: localhost
+  gather_facts: yes
+  become: yes
 
   vars:
-    ansible_remote_tmp: "/tmp/.ansible-123324453"
-    ansible_connection: local
+    apache_service_name: "{{ 'httpd' if ansible_os_family == 'RedHat' else 'apache2' }}"
+    php_fpm_service_name: "php8.2-fpm"     # Pon '' si no usas PHP-FPM
+    error_log_patterns: "*error*.log"
+    lines_to_fetch: 200
+    fetch_dest: "./logs/{{ inventory_hostname }}/"
+    # Directorios donde suele vivir la conf de VirtualHosts
+    vhost_conf_paths:
+      - "/etc/apache2/sites-enabled"
+      - "/etc/apache2/conf-enabled"
+      - "/etc/httpd/conf.d"
 
   tasks:
-    - name: Obtener información de Apache
-      ansible.builtin.command: apachectl -S
-      register: apachectl_out
-      changed_when: false
+  # 1. Validar sintaxis ---------------------------------------------------------
+  - name: Validar sintaxis de Apache
+    command: apachectl -t
+    register: apache_syntax
+    ignore_errors: true
 
-    - name: Extraer nombres de host únicos
-      when: (apache_sites | default([])) | length == 0 and apachectl_out.rc == 0
-      set_fact:
-        apache_sites: >-
-          {{ apachectl_out.stdout_lines
-            | select('search', 'namevhost')
-            | map('regex_replace', ':\\d+$', '')
-            | unique
-            | list
-          }}
+  - fail:
+      msg: |
+        ❌ Sintaxis inválida:
+        {{ apache_syntax.stderr | default(apache_syntax.stdout) }}
+    when: apache_syntax.rc != 0
 
-    - name: Mostrar los sitios de Apache encontrados
-      debug:
-        var: apache_sites
+  - debug:
+      msg: "✓ Sintaxis OK: {{ apache_syntax.stdout | trim }}"
 
-    - name: Mostrar espacio libre por punto de montaje
-      ansible.builtin.debug:
-        msg: "{{ item.mount }} → {{ item.size_available | filesizeformat(binary=True) }} libres (de {{ item.size_total | filesizeformat(binary=True) }})"
-      loop: "{{ ansible_mounts }}"
-      loop_control:
-        label: "{{ item.mount }}"
-      tags: almacenamiento
-      ignore_errors: true
+  # 2. Asegurar servicios -------------------------------------------------------
+  - name: Reiniciar/asegurar {{ apache_service_name }}
+    service:
+      name: "{{ apache_service_name }}"
+      state: restarted
+      enabled: yes
 
-    - name: Copiar los últimos 200 líneas del error_log localmente
-      ansible.builtin.shell: "tail -n 200 /var/log/apache2/error.log"
-      register: errlog
-      changed_when: false
+  - name: Reiniciar/asegurar PHP-FPM si procede
+    service:
+      name: "{{ php_fpm_service_name }}"
+      state: restarted
+      enabled: yes
+    when: php_fpm_service_name | length > 0
 
-    - name: Mostrar el log en pantalla
-      ansible.builtin.debug:
-        var: errlog.stdout_lines
-    - name: Verificar sintaxis antes de reiniciar
-      ansible.builtin.command: apache2ctl configtest
-      register: apache_configtest
-      changed_when: false
-      failed_when: apache_configtest.rc != 0
+  # 3. Descubrir DocumentRoots reales ------------------------------------------
+  - name: Obtener líneas DocumentRoot de los VirtualHosts
+    shell: |
+      grep -REi '^[[:space:]]*DocumentRoot[[:space:]]+' {{ vhost_conf_paths | join(' ') }} 2>/dev/null \
+      | awk '{print $2}' | sort -u
+    register: docroot_raw
+    changed_when: false
 
-    - name: Recarga elegante de Apache
-      ansible.builtin.systemd:
-        name: apache2          # httpd en RHEL/CentOS
-        state: reloaded        # Usa restarted si prefieres corte completo
-      when: apache_configtest.rc == 0
-      notify: mostrar_estado
+  - name: Filtrar solo rutas dentro de /home/semaphore
+    set_fact:
+      docroots: "{{ docroot_raw.stdout_lines | select('search', '^/home/semaphore') | list }}"
 
+  - name: Aviso si no se encontró ningún DocumentRoot en /home/semaphore
+    debug:
+      msg: "⚠️  No se detectaron DocumentRoots en /home/semaphore."
+    when: docroots | length == 0
 
-    - name: recargar apache2
-      ansible.builtin.command: systemctl reload apache2
-      notify: mostrar_estado
+  # 4. Probar HTTP local --------------------------------------------------------
+  - name: curl localhost (código HTTP)
+    shell: curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1/
+    register: curl_root
+    changed_when: false
+    failed_when: false
 
-    - name: (Des)habilitar site example.com
-      ansible.builtin.command: a2ensite webmachine.siteffect.com.conf && a2dissite webmachine.siteffect.com.conf
-      notify: mostrar_estado
+  - debug:
+      msg: "Código HTTP raíz: {{ curl_root.stdout }}"
 
-    - name: recargar apache2
-      ansible.builtin.command: systemctl restart apache2
-      notify: mostrar_estado
-  handlers:
-    - name: mostrar_estado
-      ansible.builtin.command: systemctl status --no-pager apache2
-      changed_when: false
+  # 5. Logs de error ------------------------------------------------------------
+  - name: Localizar error logs
+    find:
+      paths:
+        - "/var/log/{{ apache_service_name }}"
+        - "/var/log/apache2"
+        - "/var/log/httpd"
+      patterns: "{{ error_log_patterns }}"
+      recurse: yes
+    register: error_logs
+
+  - name: Guardar últimas {{ lines_to_fetch }} líneas de cada log en /tmp
+    shell: |
+      tail -n {{ lines_to_fetch }} {{ item.path }} > /tmp/{{ inventory_hostname }}_{{ item.path | basename }}
+    loop: "{{ error_logs.files }}"
+    when: error_logs.matched > 0
+
+  - name: Descargar logs al controlador
+    fetch:
+      src: "/tmp/{{ inventory_hostname }}_*"
+      dest: "{{ fetch_dest }}"
+      flat: yes
+    when: error_logs.matched > 0
+
+  # 6. Revisar permisos de cada DocumentRoot ------------------------------------
+  - name: Verificar permisos/propietarios
+    stat:
+      path: "{{ item }}"
+    loop: "{{ docroots }}"
+    register: doc_stats
+    failed_when: false
+
+  - name: Resumen de permisos
+    debug:
+      msg: |
+        {{ item.stat.path }} → owner: {{ item.stat.pw_name }}
+        group: {{ item.stat.gr_name }}  mode: {{ '%04o' % item.stat.mode }}
+    loop: "{{ doc_stats.results }}"
+
+  # 7. Conclusión ---------------------------------------------------------------
+  - debug:
+      msg: |
+        📝 Revisa los logs copiados en «{{ fetch_dest }}».
+        Corrige errores detectados (PHP Fatal, permisos, módulos faltantes, etc.).
+...
