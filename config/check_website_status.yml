@@ -9,6 +9,9 @@
   become: yes
 
   vars:
+    ansible_remote_tmp: "/tmp/.ansible-123324453"
+    ansible_connection: local
+
     apache_service_name: "{{ 'httpd' if ansible_os_family == 'RedHat' else 'apache2' }}"
     php_fpm_service_name: "php8.2-fpm"     # Pon '' si no usas PHP-FPM
     error_log_patterns: "*error*.log"
