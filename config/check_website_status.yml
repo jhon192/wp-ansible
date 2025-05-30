@@ -52,8 +52,8 @@
       success_msg: "Memoria libre OK ({{ ansible_facts.memfree_mb }} MB)"
 
   - name: Calcular carga por vCPU (1 min)
-    set_fact:
-    carga_por_cpu: "{{ (ansible_facts['loadavg']['1'] | float) / (ansible_facts['processor_vcpus'] | float) }}"
+    ansible.builtin.set_fact:
+      carga_por_cpu: "{{ (ansible_facts.loadavg.1 | float) / (ansible_facts.processor_vcpus | float) }}"
 
   - name: Comprobar carga CPU 1 min / vCPU
     ansible.builtin.assert:
