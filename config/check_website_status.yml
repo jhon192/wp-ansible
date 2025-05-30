@@ -45,3 +45,20 @@
     - name: Mostrar el log en pantalla
       ansible.builtin.debug:
         var: errlog.stdout_lines
+    - name: Verificar sintaxis antes de reiniciar
+      ansible.builtin.command: apache2ctl configtest
+      register: apache_configtest
+      changed_when: false
+      failed_when: apache_configtest.rc != 0
+
+    - name: Recarga elegante de Apache
+      ansible.builtin.systemd:
+        name: apache2          # httpd en RHEL/CentOS
+        state: reloaded        # Usa restarted si prefieres corte completo
+      when: apache_configtest.rc == 0
+      notify: mostrar_estado
+
+  handlers:
+    - name: mostrar_estado
+      ansible.builtin.command: systemctl status --no-pager apache2
+      changed_when: false
