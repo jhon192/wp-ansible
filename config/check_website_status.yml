@@ -37,11 +37,11 @@
       tags: almacenamiento
       ignore_errors: true
 
-    - name: Mostrar espacio libre por punto de montaje
+    - name: Copiar los últimos 200 líneas del error_log localmente
+      ansible.builtin.shell: "tail -n 200 /var/log/apache2/error.log"
+      register: errlog
+      changed_when: false
+
+    - name: Mostrar el log en pantalla
       ansible.builtin.debug:
-        msg: "{{ item.mount }} → {{ item.size_available | human_readable(binary=True) }} libres (de {{ item.size_total | human_readable(binary=True) }})"
-      loop: "{{ ansible_mounts }}"
-      loop_control:
-        label: "{{ item.mount }}"
-      tags: almacenamiento
-      ignore_errors: true
+        var: errlog.stdout_lines
