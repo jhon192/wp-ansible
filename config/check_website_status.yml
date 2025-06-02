@@ -8,17 +8,28 @@
 
   tasks:
 
-  - name: Mostrar últimos 50 errores de cada sitio
-    shell: tail -n 50 {{ item }}
-    loop: "{{ lookup('fileglob', '/home/semaphore/skillburst.xyz/logs/error.log', wantlist=True) }}"
-    register: site_errors
-    ignore_errors: true
+  - name: Instalar PHP 7.4 y módulos comunes
+    apt:
+      name:
+        - php7.4
+        - php7.4-cli
+        - php7.4-common
+        - php7.4-fpm
+        - php7.4-mysql
+        - php7.4-gd
+        - php7.4-mbstring
+        - php7.4-xml
+        - php7.4-curl
+        - php7.4-zip
+      state: present
+      update_cache: yes
 
-  - debug:
-      msg: |
-        🔴 Errores recientes en {{ item.item }}:
-        {{ item.stdout_lines }}
-    loop: "{{ site_errors.results }}"
+  - name: Cambiar versión de PHP activa a 7.4 (Apache)
+    shell: |
+      a2dismod php8.2
+      a2enmod php7.4
+      systemctl restart apache2
+
     
 
 #     # 1. Default deny VirtualHost
