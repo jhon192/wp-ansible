@@ -6,36 +6,19 @@
     ansible_remote_tmp: "/tmp/.ansible-123324453"
   tasks:
 
-    - name: Backup de apache2.conf antes de tocarlo
-      copy:
-        src: /etc/apache2/apache2.conf
-        dest: /etc/apache2/apache2.conf.bak
-        owner: root
-        group: root
-        mode: '0644'
-        backup: yes
-
-    - name: Borrar la línea suelta 'Require all granted'
-      lineinfile:
-        path: /etc/apache2/apache2.conf
-        regexp: '^\s*Require\s+all\s+granted\s*$'
-        state: absent
-
-    - name: Ejecutar apachectl configtest otra vez
-      shell: apachectl configtest
+    - name: 1️⃣  Ejecutar apachectl configtest
+      shell: apachectl configtest 2>&1
       register: configtest
 
-    - name: Mostrar resultado del configtest
+    - name: 2️⃣  Mostrar resultado completo del configtest
       debug:
-        var: configtest.stdout_lines
+        msg: "{{ configtest.stdout_lines }}"
 
-    - name: Fallar si sigue habiendo errores
-      fail:
-        msg: "Apache aún tiene errores: {{ configtest.stdout }}"
-      when: "'Syntax OK' not in configtest.stdout"
+    - name: 3️⃣  (Solo si la sintaxis es correcta) Mostrar las 100 últimas líneas del error.log general
+      shell: tail -n 100 /var/log/apache2/error.log
+      register: generic_errors
+      when: configtest.rc == 0
 
-    - name: Recargar Apache si la sintaxis es correcta
-      service:
-        name: apache2
-        state: reloaded
-      when: "'Syntax OK' in configtest.stdout"
+    - debug:
+        msg: "{{ generic_errors.stdout_lines }}"
+      when: configtest.rc == 0
