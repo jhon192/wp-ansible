@@ -9,7 +9,7 @@
   tasks:
 
   - name: Ver vhosts .conf
-    command: cat /etc/apache2/sites-available/skillburst.xyz.conf
+    command: cat /etc/apache2/sites-available/webmachine.siteffect.com.conf
     register: vhosts_conf
   - debug:
       var: vhosts_conf.stdout_lines
