@@ -8,13 +8,21 @@
 
   tasks:
 
-    - name: Reemplazar sintaxis antigua {} por [] en archivos PHP
-      shell: |
-        find /home/semaphore -type f -name "*.php" -exec sed -i 's/\([a-zA-Z0-9_]\){\([^\}]*\)}/\1[\2]/g' {} +
-      args:
-        executable: /bin/bash
+  - name: Mostrar últimos 50 errores de cada sitio
+    shell: tail -n 50 {{ item }}
+    loop: "{{ lookup('fileglob', '/home/semaphore/webmachine.siteffect.com/logs/error.log', wantlist=True) }}"
+    register: site_errors
+    ignore_errors: true
+
+  - debug:
+      msg: |
+        🔴 Errores recientes en {{ item.item }}:
+        {{ item.stdout_lines }}
+    loop: "{{ site_errors.results }}"
     
-    - name: reinciar Apache
-      service:
-        name: apache2
-        state: restarted
+
+  - name: mostrar index.php
+    shell: cat /home/semaphore/webmachine.siteffect.com/index.php
+    register: index_content
+  -  debug:
+      msg: "Contenido de index.php:\n{{ index_content.stdout }}"
