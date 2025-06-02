@@ -12,5 +12,5 @@
     register: apache_status
     ignore_errors: true
   - debug:
-      msg: "Apache está activo y funcionando."
+      var: apache_status
     when: apache_status.rc == 0
