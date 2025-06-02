@@ -8,20 +8,27 @@
 
   tasks:
 
-    - name: Encontrar todos los archivos wp-config.php
-      find:
-        paths: "/home/semaphore"
-        patterns: "wp-config.php"
-        recurse: yes
-      register: wp_configs
+  - name: Agregar repositorio de PHP (Ondřej Surý)
+    apt_repository:
+      repo: ppa:ondrej/php
+      state: present
+    when: ansible_distribution == "Ubuntu"
 
-    - name: Agregar "define('FS_METHOD','direct');" si no existe
-      lineinfile:
-        path: "{{ item.path }}"
-        line: "define('FS_METHOD','direct');"
-        insertafter: "<?php"
-        state: present
-      loop: "{{ wp_configs.files }}"
+  - name: Instalar PHP 7.4 y módulos comunes
+    apt:
+      name:
+        - php7.4
+        - php7.4-cli
+        - php7.4-common
+        - php7.4-fpm
+        - php7.4-mysql
+        - php7.4-gd
+        - php7.4-mbstring
+        - php7.4-xml
+        - php7.4-curl
+        - php7.4-zip
+      state: present
+      update_cache: yes
 
     
 
