@@ -8,17 +8,13 @@
     ansible_remote_tmp: "/tmp/.ansible-123324453"
   tasks:
 
-    - name: Buscar todas las rutas con wp-config.php
-      shell: find {{ base_dir }} -maxdepth 2 -mindepth 2 -type f -name "wp-config.php"
-      register: wp_configs
+  - name: Buscar instalaciones con el plugin astra-sites activo
+    shell: find /home/semaphore -maxdepth 4 -path "*/wp-content/plugins/astra-sites/inc/lib/astra-notices/class-astra-notices.php"
+    register: astra_paths
 
-    - name: Extraer ruta base de cada WordPress
-      set_fact:
-        wp_paths: "{{ wp_configs.stdout_lines | map('dirname') | list }}"
-
-    - name: Descargar archivo corregido de WP 6.5.4 (class-wp-html-tag-processor.php)
-      get_url:
-        url: "{{ fixed_file_url }}"
-        dest: "{{ item }}/wp-includes/html-api/class-wp-html-tag-processor.php"
-        mode: '0644'
-      loop: "{{ wp_paths }}"
+  - name: Descargar archivo corregido class-astra-notices.php (compatible con PHP 8.3)
+    get_url:
+      url: https://raw.githubusercontent.com/brainstormforce/astra-sites/develop/inc/lib/astra-notices/class-astra-notices.php
+      dest: "{{ item }}"
+      mode: '0644'
+    loop: "{{ astra_paths.stdout_lines }}"
