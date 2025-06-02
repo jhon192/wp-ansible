@@ -9,7 +9,7 @@
     <Directory "/home/semaphore/{{ site.linux_user }}">
         Options Indexes FollowSymLinks
         AllowOverride All
-        Require all granted
+        # Require all granted
     </Directory>
 
     ErrorLog ${APACHE_LOG_DIR}/{{ site.domain }}_error.log

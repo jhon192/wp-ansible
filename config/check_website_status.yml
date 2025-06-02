@@ -16,41 +16,11 @@
       - "/var/log/httpd"
 
   tasks:
-    - name: Mostrar estado de {{ apache_service_name }}
-      command: "systemctl status --no-pager {{ apache_service_name }}"
-      register: apache_status
-      changed_when: false
+  - name: Mostrar las primeras 300 líneas del error log de Apache
+    shell: head -n 300 /var/log/apache2/error.log
+    register: apache_error_head
+    changed_when: false        # evita que Ansible marque la tarea como “changed”
 
-    - name: ⬇️  Salida de systemctl
-      debug:
-        var: apache_status.stdout_lines
-
-    - name: Localizar archivos de error log
-      find:
-        paths: "{{ log_paths }}"
-        patterns: "{{ error_log_patterns }}"
-        recurse: yes
-      register: error_logs
-
-    - name: Aviso si no se hallaron logs
-      debug:
-        msg: "⚠️  No se encontró ningún archivo de error log para Apache."
-      when: error_logs.matched == 0
-
-    - name: Mostrar últimos {{ lines_to_show }} renglones de cada log
-      shell: "tail -n {{ lines_to_show }} {{ item.path }}"
-      loop: "{{ error_logs.files }}"
-      register: log_tails
-      changed_when: false
-      when: error_logs.matched > 0
-      loop_control:
-        label: "{{ item.path | basename }}"
-
-    - name: ⬇️  Contenido de los logs
-      debug:
-        msg: |
-          ---- {{ item.item.path }} ----
-          {{ item.stdout }}
-      loop: "{{ log_tails.results }}"
-      when: error_logs.matched > 0
-...
+  - name: Imprimir salida del head
+    debug:
+      var: apache_error_head.stdout_lines
