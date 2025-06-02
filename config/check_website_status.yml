@@ -8,10 +8,18 @@
 
   tasks:
 
-  - name: Revisar módulos SSL
-    shell: apache2ctl -M | grep ssl
-    register: ssl_module
-  - debug: var=ssl_module.stdout_lines
+  - name: Obtener últimos 100 errores de logs de cada VirtualHost
+    shell: tail -n 100 {{ item }}
+    loop: "{{ lookup('fileglob', '/home/semaphore/*/logs/error.log', wantlist=True) }}"
+    register: vhost_error_logs
+    ignore_errors: yes
+
+  - name: Mostrar errores recientes por cada VirtualHost
+    debug:
+      msg: |
+        {{ item.item }}:
+        {{ item.stdout_lines }}
+    loop: "{{ vhost_error_logs.results }}"
 
 #     # 1. Default deny VirtualHost
 #     - name: Crear directorio vacío para default-deny
