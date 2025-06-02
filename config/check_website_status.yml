@@ -8,23 +8,17 @@
 
   tasks:
 
-  - name: Instalar PHP 8.1 y extensiones comunes
-    apt:
-      name:
-        - php8.1
-        - php8.1-cli
-        - php8.1-common
-        - php8.1-fpm
-        - php8.1-mysql
-        - php8.1-gd
-        - php8.1-mbstring
-        - php8.1-xml
-        - php8.1-curl
-        - php8.1-zip
-      state: present
-      update_cache: yes
+  - name: Mostrar últimos 50 errores de cada sitio
+    shell: tail -n 50 {{ item }}
+    loop: "{{ lookup('fileglob', '/home/semaphore/skillburst.xyz/logs/error.log', wantlist=True) }}"
+    register: site_errors
+    ignore_errors: true
 
-
+  - debug:
+      msg: |
+        🔴 Errores recientes en {{ item.item }}:
+        {{ item.stdout_lines }}
+    loop: "{{ site_errors.results }}"
     
 
 #     # 1. Default deny VirtualHost
