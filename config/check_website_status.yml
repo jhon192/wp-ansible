@@ -7,8 +7,7 @@
   tasks:
 
   - name: ver estado completo de apache
-    command: journalctl -xeu apache2.service --no-pager | tail -n 50
+    command: apache2ctl -S
     register: apache_status
-
-  - debug:
-      msg: "{{ apache_status.stdout_lines }}"
+  - debug :
+      var: apache_status.stdout_lines
