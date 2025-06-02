@@ -186,3 +186,4 @@
   uri:
     url: "http://{{ site.host | default(site.domain) }}/"
     status_code: 200
+    
