@@ -8,14 +8,10 @@
 
   tasks:
 
-  - name: Permitir puertos Apache en UFW
-    ufw:
-      rule: allow
-      port: "{{ item }}"
-      proto: tcp
-    loop:
-      - 80
-      - 443
+  - name: Ver vhosts activos
+    shell: apachectl -S
+    register: apache_vhosts
+  - debug: var=apache_vhosts.stdout_lines
 
 #     # 1. Default deny VirtualHost
 #     - name: Crear directorio vacío para default-deny
