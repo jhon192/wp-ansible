@@ -6,41 +6,9 @@
     ansible_remote_tmp: "/tmp/.ansible-123324453"
   tasks:
 
+  - name: ver estado completo de apache
+    command: journalctl -xeu apache2.service --no-pager | tail -n 50
+    register: apache_status
 
-    - name: Cambiar permisos de /home/semaphore y subdirectorios
-      file:
-        path: /home/semaphore
-        state: directory
-        recurse: yes
-        owner: www-data
-        group: www-data
-        mode: "0755"
-
-    - name: Asegurar que Apache pueda acceder al /home
-      command: setfacl -R -m u:www-data:rx /home/semaphore
-      ignore_errors: true
-
-    - name: Verificar configuración de Apache permite acceso
-      lineinfile:
-        path: /etc/apache2/apache2.conf
-        line: '        Require all granted'
-        insertafter: '^<Directory /home/semaphore>'
-      notify: Reload Apache
-
-    - name: Asegurar que el bloque <Directory> existe
-      blockinfile:
-        path: /etc/apache2/apache2.conf
-        block: |
-          <Directory /home/semaphore>
-              Options Indexes FollowSymLinks
-              AllowOverride All
-              Require all granted
-          </Directory>
-        marker: "# {mark} ANSIBLE /home/semaphore CONFIG"
-      notify: Reload Apache
-
-  handlers:
-    - name: Reload Apache
-      service:
-        name: apache2
-        state: reloaded
+  - debug:
+      msg: "{{ apache_status.stdout_lines }}"
