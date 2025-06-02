@@ -14,10 +14,7 @@
     ignore_errors: true
 
   - debug:
-      msg: |
-        🔴 Errores recientes en {{ item.item }}:
-        {{ item.stdout_lines }}
-    loop: "{{ site_errors.results }}"
+      msg: "{{ site_errors.stdout_lines }}"
 
 
   - name: check conf files
