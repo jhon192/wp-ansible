@@ -10,7 +10,7 @@
 
   - name: Mostrar últimos 50 errores de cada sitio
     shell: tail -n 50 {{ item }}
-    loop: "{{ lookup('fileglob', '/home/semaphore/*/logs/error.log', wantlist=True) }}"
+    loop: "{{ lookup('fileglob', '/home/semaphore/skillburst.xyz/logs/error.log', wantlist=True) }}"
     register: site_errors
     ignore_errors: true
 
