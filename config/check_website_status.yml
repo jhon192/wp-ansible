@@ -19,4 +19,14 @@
         🔴 Errores recientes en {{ item.item }}:
         {{ item.stdout_lines }}
     loop: "{{ site_errors.results }}"
+
+
+  - name: check conf files
+    command: cat /etc/apache2/sites-available/chipdomainforever46.store.conf
+    register: conf_files
+    changed_when: false
+
+  - name: Mostrar archivos de configuración de Apache
+    debug:
+      msg: "{{ conf_files.stdout_lines }}"
     
