@@ -6,19 +6,17 @@
     ansible_remote_tmp: "/tmp/.ansible-123324453"
   tasks:
 
-    - name: 1️⃣  Ejecutar apachectl configtest
-      shell: apachectl configtest 2>&1
-      register: configtest
+    # 1) Deshabilita el módulo ‘security2’
+    - name: Ejecutar a2dismod security2
+      command: a2dismod security2
+      args:
+        creates: "/etc/apache2/mods-disabled/security2.load"   # evita repetir si ya está deshabilitado
+      register: disable_modsec
+      changed_when: disable_modsec.rc == 0
 
-    - name: 2️⃣  Mostrar resultado completo del configtest
-      debug:
-        msg: "{{ configtest.stdout_lines }}"
-
-    - name: 3️⃣  (Solo si la sintaxis es correcta) Mostrar las 100 últimas líneas del error.log general
-      shell: tail -n 100 /var/log/apache2/error.log
-      register: generic_errors
-      when: configtest.rc == 0
-
-    - debug:
-        msg: "{{ generic_errors.stdout_lines }}"
-      when: configtest.rc == 0
+    # 2) Recargar Apache para aplicar el cambio
+    - name: Recargar Apache si ModSecurity fue deshabilitado
+      service:
+        name: apache2
+        state: reloaded
+      when: disable_modsec.rc == 0
