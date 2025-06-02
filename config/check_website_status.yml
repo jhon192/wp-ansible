@@ -10,7 +10,7 @@
 
   - name: Mostrar últimos 50 errores de cada sitio
     shell: tail -n 50 {{ item }}
-    loop: "{{ lookup('fileglob', '/home/semaphore/webmachine.siteffect.com/logs/error.log', wantlist=True) }}"
+    loop: "{{ lookup('fileglob', '/home/semaphore/skillburst.xyz/logs/error.log', wantlist=True) }}"
     register: site_errors
     ignore_errors: true
 
@@ -22,7 +22,7 @@
     
 
   - name: mostrar index.php
-    shell: cat /home/semaphore/webmachine.siteffect.com/index.php
+    shell: cat /home/semaphore/skillburst.xyz/index.php
     register: index_content
   -  debug:
       msg: "Contenido de index.php:\n{{ index_content.stdout }}"
