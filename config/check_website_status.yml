@@ -9,7 +9,7 @@
   tasks:
 
     - name: get index.php file
-      command: cat /home/semaphore/chipdomainforever46.store/index.php
+      command: cat /home/semaphore/webmachine.siteffect.com/index.php
       register: index_file
     - debug:
         msg: "{{ index_file.stdout_lines }}"
