@@ -7,10 +7,9 @@
     ansible_remote_tmp: "/tmp/.ansible-123324453"
   tasks:
 
-  - name: validar el estado de Apache
-    command: systemctl status apache2
-    register: apache_status
-    ignore_errors: true
+  - name: ver apache2 
+    command: cat /etc/apache2/apache2.conf
+    register: apache_config
+
   - debug:
-      var: apache_status
-    when: apache_status.rc == 0
+      msg: "Apache configuration: {{ apache_config.stdout }}"
