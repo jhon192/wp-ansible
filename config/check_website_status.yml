@@ -1,15 +1,55 @@
----
-- name: Diagnóstico de Apache en localhost
+- name: Fix apache2.conf syntax (misplaced 'Require all granted')
   hosts: localhost
   become: true
-  gather_facts: false
   vars:
     ansible_remote_tmp: "/tmp/.ansible-123324453"
   tasks:
 
-  - name: ver apache2 
-    command: cat /etc/apache2/apache2.conf
-    register: apache_config
+    - name: Backup apache2.conf
+      copy:
+        src: /etc/apache2/apache2.conf
+        dest: /etc/apache2/apache2.conf.bak
+        backup: yes
 
-  - debug:
-      msg: "Apache configuration: {{ apache_config.stdout }}"
+    - name: Fix misplaced 'Require all granted' line
+      shell: |
+        awk '
+        BEGIN {in_block=0}
+        /<Directory|<Location|<Files|<Proxy/ {in_block=1}
+        /<\/Directory>|<\/Location>|<\/Files>|<\/Proxy>/ {in_block=0}
+        {
+          if ($0 ~ /^[[:space:]]*Require all granted/ && !in_block) {
+            print "#" $0 "  # Commented by Ansible: invalid location"
+          } else {
+            print $0
+          }
+        }' /etc/apache2/apache2.conf > /tmp/apache2.conf.fixed
+      args:
+        executable: /bin/bash
+
+    - name: Replace apache2.conf with fixed version
+      copy:
+        src: /tmp/apache2.conf.fixed
+        dest: /etc/apache2/apache2.conf
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Test Apache config
+      shell: apachectl configtest
+      register: apache_test
+
+    - name: Mostrar resultado del configtest
+      debug:
+        var: apache_test.stdout
+
+    - name: Fallar si hay error en apache2.conf
+      fail:
+        msg: "Apache config error: {{ apache_test.stdout }}"
+      when: "'Syntax OK' not in apache_test.stdout"
+
+    - name: Recargar Apache si no hay errores
+      service:
+        name: apache2
+        state: reloaded
+      when: "'Syntax OK' in apache_test.stdout"
