@@ -91,7 +91,7 @@
 - name: Ensure /home/semaphore is root:www-data  (owner=root, group=www-data)
   file:
     path: /home/semaphore
-    owner: root
+    owner: www-data
     group: www-data
     state: directory
 
@@ -111,6 +111,14 @@
       recurse: true
       state: directory
 
+
+- name: Asignar propietario www-data a los directorios
+  file:
+    path: "/home/semaphore"
+    owner: www-data
+    group: www-data
+    mode: '0755'
+    recurse: yes
 
 - name: Restart Apache after all changes
   service:
