@@ -55,4 +55,3 @@
       service:
         name: apache2
         state: reloaded
-      when: "'Syntax OK' in apache_test.stdout"
