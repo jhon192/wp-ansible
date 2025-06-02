@@ -184,7 +184,7 @@
 # ─── SMOKE-TEST ──────────────────────────────────────────────── #
 - name: Verify home page returns 200 ({{ site.domain }})
   uri:
-    url: "http://{{ site.host | default(site.domain) }}/"
+    url: "https://{{ site.host | default(site.domain) }}/"
     status_code: 200
   retries: 5
   delay: 10
