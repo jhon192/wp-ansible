@@ -9,8 +9,7 @@
   tasks:
 
   - name: Mostrar últimos 50 errores de cada sitio
-    shell: tail -n 50 {{ item }}
-    loop: "{{ lookup('fileglob', '/home/semaphore/chipdomainforever46.store/logs/error.log', wantlist=True) }}"
+    shell: tail -n 50 /home/semaphore/chipdomainforever46.store/logs/error.log
     register: site_errors
     ignore_errors: true
 
