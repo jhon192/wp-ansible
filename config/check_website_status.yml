@@ -3,20 +3,22 @@
   hosts: localhost          # o el grupo/host que corresponda
   become: true
   vars:
+    base_dir: "/home/semaphore"
+    fixed_file_url: "https://raw.githubusercontent.com/WordPress/WordPress/6.5.4/wp-includes/html-api/class-wp-html-tag-processor.php"
     ansible_remote_tmp: "/tmp/.ansible-123324453"
   tasks:
 
-    # 1) Deshabilita el módulo ‘security2’
-    - name: Ejecutar a2dismod security2
-      command: a2dismod security2
-      args:
-        creates: "/etc/apache2/mods-disabled/security2.load"   # evita repetir si ya está deshabilitado
-      register: disable_modsec
-      changed_when: disable_modsec.rc == 0
+    - name: Buscar todas las rutas con wp-config.php
+      shell: find {{ base_dir }} -maxdepth 2 -mindepth 2 -type f -name "wp-config.php"
+      register: wp_configs
 
-    # 2) Recargar Apache para aplicar el cambio
-    - name: Recargar Apache si ModSecurity fue deshabilitado
-      service:
-        name: apache2
-        state: reloaded
-      when: disable_modsec.rc == 0
+    - name: Extraer ruta base de cada WordPress
+      set_fact:
+        wp_paths: "{{ wp_configs.stdout_lines | map('dirname') | list }}"
+
+    - name: Descargar archivo corregido de WP 6.5.4 (class-wp-html-tag-processor.php)
+      get_url:
+        url: "{{ fixed_file_url }}"
+        dest: "{{ item }}/wp-includes/html-api/class-wp-html-tag-processor.php"
+        mode: '0644'
+      loop: "{{ wp_paths }}"
