@@ -7,36 +7,30 @@
     ansible_remote_tmp: "/tmp/.ansible-123324453"
   tasks:
 
-    - name: Verificar estado del servicio Apache
-      shell: systemctl status apache2.service -l --no-pager
-      register: apache_status
-      ignore_errors: true
+  - name: Validar que las directivas 'Require' estén dentro de bloques válidos
+    shell: |
+      awk '/Require / && !in_block { print "Línea inválida:", NR, $0 } 
+          /<Directory|<Location|<Files|<Proxy/ { in_block=1 } 
+          /<\/Directory>|<\/Location>|<\/Files>|<\/Proxy>/ { in_block=0 }' /etc/apache2/apache2.conf
+    register: require_check
 
-    - name: Mostrar estado del servicio Apache
-      debug:
-        var: apache_status.stdout_lines
+  - name: Mostrar líneas inválidas con Require
+    debug:
+      var: require_check.stdout_lines
+    when: require_check.stdout != ""
 
-    - name: Ejecutar apachectl configtest
-      shell: apachectl configtest
-      register: config_test
-      ignore_errors: true
+  - name: verificar el estado de Apache
+    service:
+      name: apache2
+      state: started
+      enabled: true
+      
+  - name: Ejecutar apachectl configtest
+    shell: apachectl configtest
+    register: config_test
+    ignore_errors: true
 
-    - name: Mostrar resultado del configtest
-      debug:
-        msg: "{{ config_test.stdout_lines if config_test.rc == 0 else config_test.stderr_lines }}"
+  - name: Mostrar resultado del configtest
+    debug:
+      msg: "{{ config_test.stdout_lines if config_test.rc == 0 else config_test.stderr_lines }}"
 
-    - name: Mostrar logs de Apache si configtest falla
-      shell: journalctl -xeu apache2.service --no-pager | tail -n 50
-      register: apache_logs
-      when: config_test.rc != 0
-
-    - name: Mostrar últimos logs del servicio apache2
-      debug:
-        var: apache_logs.stdout_lines
-      when: config_test.rc != 0
-
-    - name: Recargar Apache si configtest fue exitoso
-      service:
-        name: apache2
-        state: reloaded
-      when: config_test.rc == 0
