@@ -101,6 +101,14 @@
 #     mode: '0750'
 #     state: directory
 
+- name: create logs directory for {{ site.linux_user }}
+  file:
+      path: "/home/semaphore/{{ site.linux_user }}/logs"
+      state: directory
+      owner: www-data
+      group: www-data
+      mode: '0755'
+
 
 - name: Restart Apache after all changes
   service:
