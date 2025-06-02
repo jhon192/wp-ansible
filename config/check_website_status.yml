@@ -9,13 +9,13 @@
 
   - name: Arreglar permisos de sitios
     file:
-      path: "{{ item }}"
+      path: "/home/semaphore/"
       recurse: yes
       state: directory
       mode: '0755'
       owner: www-data
       group: www-data
-    loop: "{{ lookup('ansible.builtin.find', '/home/semaphore', recurse=False, file_type='directory').files | map(attribute='path') | list }}"
+
 
   - name: Arreglar permisos de archivos dentro de sitios
     file:
