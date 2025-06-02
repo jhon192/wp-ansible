@@ -13,5 +13,8 @@
         find /home/semaphore -type f -name "*.php" -exec sed -i 's/\([a-zA-Z0-9_]\){\([^\}]*\)}/\1[\2]/g' {} +
       args:
         executable: /bin/bash
-      notify:
-        - Restart apache
+    
+    - name: reinciar Apache
+      service:
+        name: apache2
+        state: restarted
