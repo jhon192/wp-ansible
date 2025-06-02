@@ -8,10 +8,14 @@
 
   tasks:
 
-    - name: Ver puertos en escucha (Apache)
-      shell: ss -tulpn | grep apache
-      register: apache_ports
-    - debug: var=apache_ports.stdout_lines
+  - name: Permitir puertos Apache en UFW
+    ufw:
+      rule: allow
+      port: "{{ item }}"
+      proto: tcp
+    loop:
+      - 80
+      - 443
 
 #     # 1. Default deny VirtualHost
 #     - name: Crear directorio vacío para default-deny
