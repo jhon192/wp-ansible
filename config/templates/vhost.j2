@@ -12,6 +12,7 @@
         # Require all granted
     </Directory>
 
-    ErrorLog ${APACHE_LOG_DIR}/{{ site.domain }}_error.log
-    CustomLog ${APACHE_LOG_DIR}/{{ site.domain }}_access.log combined
+    ErrorLog /home/semaphore/{{ site.domain }}_error.log
+    CustomLog /home/semaphore/{{ site.domain }}_access.log combined
+    LogLevel warn
 </VirtualHost>
