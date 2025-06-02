@@ -38,10 +38,12 @@
     - name: Test Apache config
       shell: apachectl configtest
       register: apache_test
+      ignore_errors: true
 
     - name: Mostrar resultado del configtest
       debug:
         var: apache_test.stdout
+      when: apache_test.stdout is defined
 
     - name: Fallar si hay error en apache2.conf
       fail:
