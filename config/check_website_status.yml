@@ -8,10 +8,10 @@
 
   tasks:
 
-  - name: Ver vhosts activos
-    shell: apachectl -S
-    register: apache_vhosts
-  - debug: var=apache_vhosts.stdout_lines
+  - name: Revisar módulos SSL
+    shell: apache2ctl -M | grep ssl
+    register: ssl_module
+  - debug: var=ssl_module.stdout_lines
 
 #     # 1. Default deny VirtualHost
 #     - name: Crear directorio vacío para default-deny
