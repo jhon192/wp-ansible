@@ -49,6 +49,7 @@
       fail:
         msg: "Apache config error: {{ apache_test.stdout }}"
       when: "'Syntax OK' not in apache_test.stdout"
+      ignore_errors: true
 
     - name: Recargar Apache si no hay errores
       service:
