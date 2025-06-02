@@ -9,7 +9,7 @@
   tasks:
 
   - name: Ver vhosts .conf
-    command: ls -l /etc/apache2/sites-available/*.conf
+    command: ls -l /etc/apache2/sites-available/skillburst.xyz.conf
     register: vhosts_conf
   - debug:
       var: vhosts_conf.stdout_lines
