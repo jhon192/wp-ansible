@@ -186,4 +186,8 @@
   uri:
     url: "http://{{ site.host | default(site.domain) }}/"
     status_code: 200
-    
+  retries: 5
+  delay: 10
+  register: home_page_test
+  until: home_page_test.status == 200
+
