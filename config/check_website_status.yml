@@ -8,18 +8,11 @@
 
   tasks:
 
-  - name: Obtener últimos 100 errores de logs de cada VirtualHost
-    shell: tail -n 100 {{ item }}
-    loop: "{{ lookup('fileglob', '/home/semaphore/*/logs/error.log', wantlist=True) }}"
-    register: vhost_error_logs
-    ignore_errors: yes
-
-  - name: Mostrar errores recientes por cada VirtualHost
-    debug:
-      msg: |
-        {{ item.item }}:
-        {{ item.stdout_lines }}
-    loop: "{{ vhost_error_logs.results }}"
+  - name: Ver vhosts .conf
+    command: ls -l /etc/apache2/sites-available/*.conf
+    register: vhosts_conf
+  - debug:
+      var: vhosts_conf.stdout_lines
 
 #     # 1. Default deny VirtualHost
 #     - name: Crear directorio vacío para default-deny
