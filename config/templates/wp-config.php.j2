@@ -3,6 +3,7 @@ define('DB_NAME', '{{ site.db_name }}');
 define('DB_USER', '{{ site.db_user }}');
 define('DB_PASSWORD', '{{ site.db_pass }}');
 define('DB_HOST', 'localhost');
+define('FS_METHOD','direct');
 
 // Single-line WordPress salts for each key
 define('AUTH_KEY',         '{{ lookup("password", "/dev/null length=64") }}');
