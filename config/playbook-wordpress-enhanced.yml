@@ -61,7 +61,6 @@
         - mariadb-client
         - python3-mysqldb
         - unzip
-        - php-fpm
       state: present
       update_cache: yes
 
