@@ -1,34 +1,57 @@
-- name: Optimizar seguridad y logs Apache
+---
+- name: Reemplazar index.php con contenido WordPress en sitios
   hosts: localhost
   become: yes
-  gather_facts: yes
 
   vars:
     ansible_remote_tmp: "/tmp/.ansible-123324453"
-
   tasks:
 
-    - name: get index.php file
-      command: cat /home/semaphore/webmachine.siteffect.com/index.php
-      register: index_file
-    - debug:
-        msg: "{{ index_file.stdout_lines }}"
+    - name: Buscar archivos index.php en primer nivel de subdirectorios
+      find:
+        paths: /home/semaphore/
+        file_type: file
+        patterns: index.php
+        recurse: no
+      register: initial_dirs
 
-  # - name: Mostrar últimos 50 errores de cada sitio
-  #   shell: tail -n 50 /home/semaphore/chipdomainforever46.store/logs/error.log
-  #   register: site_errors
-  #   ignore_errors: true
+    - name: Buscar index.php dentro de subdirectorios inmediatos
+      find:
+        paths: "{{ item.path }}"
+        patterns: index.php
+        file_type: file
+        recurse: no
+      register: found_index_files
+      loop: "{{ initial_dirs.files }}"
+      when: item.path is search('^/home/semaphore/[^/]+$')
 
-  # - debug:
-  #     msg: "{{ site_errors.stdout_lines }}"
+    - name: Unificar lista de archivos encontrados
+      set_fact:
+        all_index_files: "{{ found_index_files.results | map(attribute='files') | list | flatten }}"
 
+    - name: Reemplazar contenido de index.php
+      copy:
+        dest: "{{ item.path }}"
+        content: |
+          <?php
+          /**
+           * Front to the WordPress application. This file doesn't do anything, but loads
+           * wp-blog-header.php which does and tells WordPress to load the theme.
+           *
+           * @package WordPress
+           */
+          /**
+           * Tells WordPress to load the WordPress theme and output it.
+           *
+           * @var bool
+           */
+          define('WP_USE_THEMES', true);
+          /** Loads the WordPress Environment and Template */
+          require('./wp-blog-header.php');
+          ?>
+        owner: www-data
+        group: www-data
+        mode: '0644'
+      loop: "{{ all_index_files }}"
+      when: all_index_files | length > 0
 
-  # - name: check conf files
-  #   command: cat /etc/apache2/sites-available/chipdomainforever46.store.conf
-  #   register: conf_files
-  #   changed_when: false
-
-  # - name: Mostrar archivos de configuración de Apache
-  #   debug:
-  #     msg: "{{ conf_files.stdout_lines }}"
-    
