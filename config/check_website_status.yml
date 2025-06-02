@@ -4,17 +4,48 @@
   become: true
   vars:
     base_dir: "/home/semaphore"
-    fixed_file_url: "https://raw.githubusercontent.com/WordPress/WordPress/6.5.4/wp-includes/html-api/class-wp-html-tag-processor.php"
+    wp_cli: "/usr/local/bin/wp"  
     ansible_remote_tmp: "/tmp/.ansible-123324453"
   tasks:
 
-  - name: Buscar instalaciones con el plugin astra-sites activo
-    shell: find /home/semaphore -maxdepth 4 -path "*/wp-content/plugins/astra-sites/inc/lib/astra-notices/class-astra-notices.php"
-    register: astra_paths
+  #################################################################
+  # 2) Detectar cada instalación WordPress
+  #################################################################
+  - name: Listar rutas con wp-config.php (máx. 2 niveles)
+    shell: |
+      find {{ base_dir }} -mindepth 2 -maxdepth 2 -type f -name wp-config.php
+    register: wp_configs
 
-  - name: Descargar archivo corregido class-astra-notices.php (compatible con PHP 8.3)
-    get_url:
-      url: https://raw.githubusercontent.com/brainstormforce/astra-sites/develop/inc/lib/astra-notices/class-astra-notices.php
-      dest: "{{ item }}"
-      mode: '0644'
-    loop: "{{ astra_paths.stdout_lines }}"
+  - name: Obtener paths WP
+    set_fact:
+      wp_paths: "{{ wp_configs.stdout_lines | map('dirname') | list }}"
+
+  #################################################################
+  # 3) Actualizar o instalar Starter Templates en cada WP
+  #################################################################
+  - name: Actualizar (o instalar) plugin starter-templates
+    shell: |
+      {{ wp_cli }} --path={{ item }} plugin install starter-templates --activate --force --quiet
+    args:
+      warn: false
+    loop: "{{ wp_paths }}"
+    register: plugin_updates
+
+  - name: Mostrar resultado por sitio
+    debug:
+      msg: "✔ {{ item.item }} -> {{ item.stdout | default('updated') }}"
+    loop: "{{ plugin_updates.results }}"
+
+  #################################################################
+  # 4) Verificar que ya no existe el parse error
+  #################################################################
+  - name: Validar sintaxis PHP del archivo conflictivo (debe ser OK)
+    shell: |
+      php -l {{ item }}/wp-content/plugins/starter-templates/inc/lib/astra-notices/class-astra-notices.php
+    loop: "{{ wp_paths }}"
+    register: syntax_checks
+
+  - name: Resumen de validación
+    debug:
+      msg: "{{ item.stdout }}"
+    loop: "{{ syntax_checks.results }}"
