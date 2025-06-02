@@ -1,33 +1,24 @@
 ---
-- name: Reemplazar index.php con contenido WordPress en sitios
+- name: Reemplazar index.php con contenido WordPress
   hosts: localhost
-  become: yes
-
-  vars:
-    ansible_remote_tmp: "/tmp/.ansible-123324453"
+  become: true
   tasks:
 
-    - name: Buscar archivos index.php en primer nivel de subdirectorios
+    - name: Buscar archivos index.php en subdirectorios directos de /home/semaphore
       find:
         paths: /home/semaphore/
-        file_type: file
-        patterns: index.php
-        recurse: no
-      register: initial_dirs
-
-    - name: Buscar index.php dentro de subdirectorios inmediatos
-      find:
-        paths: "{{ item.path }}"
         patterns: index.php
         file_type: file
-        recurse: no
+        recurse: yes
       register: found_index_files
-      loop: "{{ initial_dirs.files }}"
-      when: item.path is search('^/home/semaphore/[^/]+$')
 
-    - name: Unificar lista de archivos encontrados
+    - name: Filtrar archivos que están en /home/semaphore/*/index.php (no más profundos)
       set_fact:
-        all_index_files: "{{ found_index_files.results | map(attribute='files') | list | flatten }}"
+        filtered_index_files: "{{ found_index_files.files | selectattr('path', 'match', '^/home/semaphore/[^/]+/index\\.php$') | list }}"
+
+    - name: Mostrar los archivos que serán modificados
+      debug:
+        msg: "{{ filtered_index_files | map(attribute='path') | list }}"
 
     - name: Reemplazar contenido de index.php
       copy:
@@ -40,18 +31,10 @@
            *
            * @package WordPress
            */
-          /**
-           * Tells WordPress to load the WordPress theme and output it.
-           *
-           * @var bool
-           */
           define('WP_USE_THEMES', true);
-          /** Loads the WordPress Environment and Template */
           require('./wp-blog-header.php');
           ?>
         owner: www-data
         group: www-data
         mode: '0644'
-      loop: "{{ all_index_files }}"
-      when: all_index_files | length > 0
-
+      loop: "{{ filtered_index_files }}"
