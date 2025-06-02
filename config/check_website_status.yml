@@ -7,37 +7,12 @@
     ansible_remote_tmp: "/tmp/.ansible-123324453"
   tasks:
 
-    - name: Buscar archivos index.php en subdirectorios directos de /home/semaphore
-      find:
-        paths: /home/semaphore/
-        patterns: index.php
-        file_type: file
-        recurse: yes
-      register: found_index_files
+    - name: Habilitar WP_DEBUG en wp-config.php
+      lineinfile:
+        path: "{{ item }}"
+        regexp: "define\\('WP_DEBUG',.*\\);"
+        line: "define('WP_DEBUG', true);"
+        insertafter: "/* That's all, stop editing! Happy publishing. */"
+        backup: yes
+      loop: "{{ lookup('ansible.builtin.find', '/home/semaphore/', recurse=True, patterns='wp-config.php', wantlist=True) }}"
 
-    - name: Filtrar archivos que están en /home/semaphore/*/index.php (no más profundos)
-      set_fact:
-        filtered_index_files: "{{ found_index_files.files | selectattr('path', 'match', '^/home/semaphore/[^/]+/index\\.php$') | list }}"
-
-    - name: Mostrar los archivos que serán modificados
-      debug:
-        msg: "{{ filtered_index_files | map(attribute='path') | list }}"
-
-    - name: Reemplazar contenido de index.php
-      copy:
-        dest: "{{ item.path }}"
-        content: |
-          <?php
-          /**
-           * Front to the WordPress application. This file doesn't do anything, but loads
-           * wp-blog-header.php which does and tells WordPress to load the theme.
-           *
-           * @package WordPress
-           */
-          define('WP_USE_THEMES', true);
-          require('./wp-blog-header.php');
-          ?>
-        owner: www-data
-        group: www-data
-        mode: '0644'
-      loop: "{{ filtered_index_files }}"
