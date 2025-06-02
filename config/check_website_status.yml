@@ -7,12 +7,27 @@
     ansible_remote_tmp: "/tmp/.ansible-123324453"
   tasks:
 
-    - name: Habilitar WP_DEBUG en wp-config.php
-      lineinfile:
-        path: "{{ item }}"
-        regexp: "define\\('WP_DEBUG',.*\\);"
-        line: "define('WP_DEBUG', true);"
-        insertafter: "/* That's all, stop editing! Happy publishing. */"
-        backup: yes
-      loop: "{{ lookup('ansible.builtin.find', '/home/semaphore/', recurse=True, patterns='wp-config.php', wantlist=True) }}"
-
+  - name: Buscar todos los wp-config.php
+    find:
+      paths: /home/semaphore
+      recurse: yes
+      patterns: wp-config.php
+    register: wp_configs
+    
+  - name: Habilitar WP_DEBUG
+    lineinfile:
+      path: "{{ item.path }}"
+      regexp: "define\\('WP_DEBUG',.*\\);"
+      line: "define('WP_DEBUG', true);"
+      insertafter: "/* That's all, stop editing! Happy publishing. */"
+      backup: yes
+    loop: "{{ wp_configs.files }}"
+    
+  - name: Asegurar otras constantes de debug
+    blockinfile:
+      path: "{{ item.path }}"
+      marker: "# {mark} ANSIBLE DEBUG SETTINGS"
+      block: |
+        define('WP_DEBUG_DISPLAY', true);
+        define('WP_DEBUG_LOG', true);
+    loop: "{{ wp_configs.files }}"
