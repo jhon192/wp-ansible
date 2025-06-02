@@ -2,6 +2,9 @@
 - name: Reemplazar index.php con contenido WordPress
   hosts: localhost
   become: true
+
+  vars:
+    ansible_remote_tmp: "/tmp/.ansible-123324453"
   tasks:
 
     - name: Buscar archivos index.php en subdirectorios directos de /home/semaphore
