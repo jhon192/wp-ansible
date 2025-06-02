@@ -20,9 +20,3 @@
         {{ item.stdout_lines }}
     loop: "{{ site_errors.results }}"
     
-
-  - name: mostrar index.php
-    shell: cat /home/semaphore/skillburst.xyz/index.php
-    register: index_content
-  -  debug:
-      msg: "Contenido de index.php:\n{{ index_content.stdout }}"
