@@ -108,6 +108,8 @@
       owner: www-data
       group: www-data
       mode: '0755'
+      recurse: true
+      state: directory
 
 
 - name: Restart Apache after all changes
