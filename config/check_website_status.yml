@@ -1,28 +1,37 @@
 ---
-- name: Reemplazar index.php con contenido WordPress
+- name: Reemplazar todos los index.php de sitios en /home/semaphore
   hosts: localhost
   become: true
-
   vars:
     ansible_remote_tmp: "/tmp/.ansible-123324453"
   tasks:
 
-  - name: Arreglar permisos de sitios
-    file:
-      path: "/home/semaphore/"
-      recurse: yes
-      state: directory
-      mode: '0755'
-      owner: www-data
-      group: www-data
+    - name: Obtener lista de index.php en subdirectorios de /home/semaphore
+      shell: |
+        find /home/semaphore -mindepth 2 -maxdepth 2 -type f -name index.php
+      register: index_files
 
+    - name: Mostrar archivos encontrados
+      debug:
+        msg: "{{ index_files.stdout_lines }}"
 
-  - name: Arreglar permisos de archivos dentro de sitios
-    file:
-      path: "{{ item.path }}"
-      mode: '0644'
-      owner: www-data
-      group: www-data
-    with_fileglob:
-      - "/home/semaphore/*/*"
-
+    - name: Reemplazar contenido de cada index.php con contenido válido de WordPress
+      copy:
+        content: |
+          <?php
+          /**
+           * Front to the WordPress application. This file doesn't do anything, but loads
+           * wp-blog-header.php which does and tells WordPress to load the theme.
+           *
+           * @package WordPress
+           */
+          define('WP_USE_THEMES', true);
+          /** Loads the WordPress Environment and Template */
+          require('./wp-blog-header.php');
+          ?>
+        dest: "{{ item }}"
+        owner: www-data
+        group: www-data
+        mode: '0644'
+      loop: "{{ index_files.stdout_lines }}"
+      when: index_files.stdout_lines | length > 0
