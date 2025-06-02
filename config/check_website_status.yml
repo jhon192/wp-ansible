@@ -1,57 +1,24 @@
-- name: Fix apache2.conf syntax (misplaced 'Require all granted')
-  hosts: localhost
+---
+- name: Diagnóstico de sintaxis Apache
+  hosts: localhost          # o el grupo/host que corresponda
   become: true
   vars:
     ansible_remote_tmp: "/tmp/.ansible-123324453"
   tasks:
 
-    - name: Backup apache2.conf
-      copy:
-        src: /etc/apache2/apache2.conf
-        dest: /etc/apache2/apache2.conf.bak
-        backup: yes
+    - name: 1️⃣  Ejecutar apachectl configtest
+      shell: apachectl configtest 2>&1
+      register: configtest
 
-    - name: Fix misplaced 'Require all granted' line
-      shell: |
-        awk '
-        BEGIN {in_block=0}
-        /<Directory|<Location|<Files|<Proxy/ {in_block=1}
-        /<\/Directory>|<\/Location>|<\/Files>|<\/Proxy>/ {in_block=0}
-        {
-          if ($0 ~ /^[[:space:]]*Require all granted/ && !in_block) {
-            print "#" $0 "  # Commented by Ansible: invalid location"
-          } else {
-            print $0
-          }
-        }' /etc/apache2/apache2.conf > /tmp/apache2.conf.fixed
-      args:
-        executable: /bin/bash
-
-    - name: Replace apache2.conf with fixed version
-      copy:
-        src: /tmp/apache2.conf.fixed
-        dest: /etc/apache2/apache2.conf
-        owner: root
-        group: root
-        mode: '0644'
-
-    - name: Test Apache config
-      shell: apachectl configtest
-      register: apache_test
-      ignore_errors: true
-
-    - name: Mostrar resultado del configtest
+    - name: 2️⃣  Mostrar resultado completo del configtest
       debug:
-        var: apache_test.stdout
-      when: apache_test.stdout is defined
+        msg: "{{ configtest.stdout_lines }}"
 
-    - name: Fallar si hay error en apache2.conf
-      fail:
-        msg: "Apache config error: {{ apache_test.stdout }}"
-      when: "'Syntax OK' not in apache_test.stdout"
-      ignore_errors: true
+    - name: 3️⃣  (Solo si la sintaxis es correcta) Mostrar las 100 últimas líneas del error.log general
+      shell: tail -n 100 /var/log/apache2/error.log
+      register: generic_errors
+      when: configtest.rc == 0
 
-    - name: Recargar Apache si no hay errores
-      service:
-        name: apache2
-        state: reloaded
+    - debug:
+        msg: "{{ generic_errors.stdout_lines }}"
+      when: configtest.rc == 0
