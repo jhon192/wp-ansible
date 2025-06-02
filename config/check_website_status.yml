@@ -28,5 +28,5 @@
     shell: a2dissite 000-default.conf
     args:
       removes: /etc/apache2/sites-enabled/000-default.conf
-    notify: restart apache2
+    notify: restart apache
   
