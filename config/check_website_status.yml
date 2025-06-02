@@ -8,21 +8,27 @@
 
   tasks:
 
-  - name: Mostrar últimos 50 errores de cada sitio
-    shell: tail -n 50 /home/semaphore/chipdomainforever46.store/logs/error.log
-    register: site_errors
-    ignore_errors: true
+    - name: php version
+      command: php -v
+      register: php_version
+    - debug:
+        msg: "PHP Version: {{ php_version.stdout }}"
 
-  - debug:
-      msg: "{{ site_errors.stdout_lines }}"
+  # - name: Mostrar últimos 50 errores de cada sitio
+  #   shell: tail -n 50 /home/semaphore/chipdomainforever46.store/logs/error.log
+  #   register: site_errors
+  #   ignore_errors: true
+
+  # - debug:
+  #     msg: "{{ site_errors.stdout_lines }}"
 
 
-  - name: check conf files
-    command: cat /etc/apache2/sites-available/chipdomainforever46.store.conf
-    register: conf_files
-    changed_when: false
+  # - name: check conf files
+  #   command: cat /etc/apache2/sites-available/chipdomainforever46.store.conf
+  #   register: conf_files
+  #   changed_when: false
 
-  - name: Mostrar archivos de configuración de Apache
-    debug:
-      msg: "{{ conf_files.stdout_lines }}"
+  # - name: Mostrar archivos de configuración de Apache
+  #   debug:
+  #     msg: "{{ conf_files.stdout_lines }}"
     
