@@ -26,7 +26,6 @@
   - name: Actualizar (o instalar) Starter Templates en cada sitio
     shell: "{{ wp_cli }} --path={{ item }} plugin install starter-templates --activate --force --quiet"
     loop: "{{ wp_paths }}"
-    warn: false
     register: plugin_updates
 
 
