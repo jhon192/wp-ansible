@@ -16,11 +16,17 @@
       - "/var/log/httpd"
 
   tasks:
-  - name: Mostrar las primeras 300 líneas del error log de Apache
-    shell: head -n 300 /var/log/apache2/error.log
-    register: apache_error_head
-    changed_when: false        # evita que Ansible marque la tarea como “changed”
+  # - name: Mostrar las primeras 300 líneas del error log de Apache
+  #   shell: head -n 300 /var/log/apache2/error.log
+  #   register: apache_error_head
+  #   changed_when: false        # evita que Ansible marque la tarea como “changed”
 
-  - name: Imprimir salida del head
-    debug:
-      var: apache_error_head.stdout_lines
+  # - name: Imprimir salida del head
+  #   debug:
+  #     var: apache_error_head.stdout_lines
+  - name: Deshabilitar vhost por defecto (000-default)
+  command: a2dissite 000-default.conf
+  args:
+    removes: /etc/apache2/sites-enabled/000-default.conf
+  notify: restart apache2
+  
