@@ -7,155 +7,161 @@
     ansible_remote_tmp: "/tmp/.ansible-123324453"
 
   tasks:
-    # 1. Default deny VirtualHost
-    - name: Crear directorio vacío para default-deny
-      file:
-        path: /var/empty
-        state: directory
-        mode: "0755"
 
-    - name: Crear vhost default-deny para rechazar bots
-      copy:
-        dest: /etc/apache2/sites-available/default-deny.conf
-        content: |
-          <VirtualHost _default_:80>
-            ServerName default-deny.local
-            DocumentRoot /var/empty
+    - name: Ver puertos en escucha (Apache)
+      shell: ss -tulpn | grep apache
+      register: apache_ports
+    - debug: var=apache_ports.stdout_lines
 
-            <Directory "/var/empty">
-              Require all denied
-            </Directory>
+#     # 1. Default deny VirtualHost
+#     - name: Crear directorio vacío para default-deny
+#       file:
+#         path: /var/empty
+#         state: directory
+#         mode: "0755"
 
-            ErrorLog ${APACHE_LOG_DIR}/default_deny_error.log
-            CustomLog ${APACHE_LOG_DIR}/default_deny_access.log combined
-          </VirtualHost>
+#     - name: Crear vhost default-deny para rechazar bots
+#       copy:
+#         dest: /etc/apache2/sites-available/default-deny.conf
+#         content: |
+#           <VirtualHost _default_:80>
+#             ServerName default-deny.local
+#             DocumentRoot /var/empty
 
-    - name: Activar vhost default-deny
-      command: a2ensite default-deny.conf
-      args:
-        creates: /etc/apache2/sites-enabled/default-deny.conf
-      notify: restart apache
+#             <Directory "/var/empty">
+#               Require all denied
+#             </Directory>
 
+#             ErrorLog ${APACHE_LOG_DIR}/default_deny_error.log
+#             CustomLog ${APACHE_LOG_DIR}/default_deny_access.log combined
+#           </VirtualHost>
 
-    # 2. Disable 000-default
-    - name: Deshabilitar vhost por defecto (000-default)
-      command: a2dissite 000-default.conf
-      args:
-        removes: /etc/apache2/sites-enabled/000-default.conf
-      notify: restart apache
-
-    # 3. Logrotate Apache
-    - name: Configurar logrotate para Apache
-      copy:
-        dest: /etc/logrotate.d/apache2
-        content: |
-          /var/log/apache2/*.log {
-              weekly
-              missingok
-              rotate 4
-              compress
-              delaycompress
-              notifempty
-              create 640 root adm
-              sharedscripts
-              postrotate
-                  if /etc/init.d/apache2 status > /dev/null ; then \
-                      /etc/init.d/apache2 reload > /dev/null; \
-                  fi;
-              endscript
-          }
+#     - name: Activar vhost default-deny
+#       command: a2ensite default-deny.conf
+#       args:
+#         creates: /etc/apache2/sites-enabled/default-deny.conf
+#       notify: restart apache
 
 
-    # 4. Fail2ban
-    - name: Instalar fail2ban
-      apt:
-        name: fail2ban
-        state: present
-        update_cache: yes
+#     # 2. Disable 000-default
+#     - name: Deshabilitar vhost por defecto (000-default)
+#       command: a2dissite 000-default.conf
+#       args:
+#         removes: /etc/apache2/sites-enabled/000-default.conf
+#       notify: restart apache
 
-    - name: Crear jail local para Apache badbots y 404
-      copy:
-        dest: /etc/fail2ban/jail.d/apache-local.conf
-        content: |
-          [apache-badbots]
-          enabled = true
-          port = http,https
-          filter = apache-badbots
-          logpath = /var/log/apache2/*access.log
-          maxretry = 5
-
-          [apache-404]
-          enabled = true
-          port = http,https
-          filter = apache-404
-          logpath = /var/log/apache2/*access.log
-          maxretry = 10
-
-    - name: Reiniciar servicio fail2ban
-      service:
-        name: fail2ban
-        state: restarted
+#     # 3. Logrotate Apache
+#     - name: Configurar logrotate para Apache
+#       copy:
+#         dest: /etc/logrotate.d/apache2
+#         content: |
+#           /var/log/apache2/*.log {
+#               weekly
+#               missingok
+#               rotate 4
+#               compress
+#               delaycompress
+#               notifempty
+#               create 640 root adm
+#               sharedscripts
+#               postrotate
+#                   if /etc/init.d/apache2 status > /dev/null ; then \
+#                       /etc/init.d/apache2 reload > /dev/null; \
+#                   fi;
+#               endscript
+#           }
 
 
-    # 5. ModSecurity WAF
-    - name: Instalar ModSecurity
-      apt:
-        name:
-          - libapache2-mod-security2
-          - modsecurity-crs
-        state: present
-        update_cache: yes
+#     # 4. Fail2ban
+#     - name: Instalar fail2ban
+#       apt:
+#         name: fail2ban
+#         state: present
+#         update_cache: yes
 
-    - name: Copiar configuración base ModSecurity
-      copy:
-        src: /etc/modsecurity/modsecurity.conf-recommended
-        dest: /etc/modsecurity/modsecurity.conf
-        remote_src: yes
+#     - name: Crear jail local para Apache badbots y 404
+#       copy:
+#         dest: /etc/fail2ban/jail.d/apache-local.conf
+#         content: |
+#           [apache-badbots]
+#           enabled = true
+#           port = http,https
+#           filter = apache-badbots
+#           logpath = /var/log/apache2/*access.log
+#           maxretry = 5
 
-    - name: Activar modo de protección activa ModSecurity
-      lineinfile:
-        path: /etc/modsecurity/modsecurity.conf
-        regexp: "^SecRuleEngine"
-        line: "SecRuleEngine On"
+#           [apache-404]
+#           enabled = true
+#           port = http,https
+#           filter = apache-404
+#           logpath = /var/log/apache2/*access.log
+#           maxretry = 10
 
-    - name: Activar reglas OWASP CRS
-      file:
-        src: /usr/share/modsecurity-crs/activated_rules
-        dest: /etc/modsecurity/rules
-        state: link
-        force: yes
-
-    - name: Reiniciar Apache (por ModSecurity)
-      service:
-        name: apache2
-        state: restarted
+#     - name: Reiniciar servicio fail2ban
+#       service:
+#         name: fail2ban
+#         state: restarted
 
 
-    # 6. Logs individuales por vhost
-    - name: Añadir configuración de logs a cada VirtualHost
-      replace:
-        path: "{{ item }}"
-        regexp: '(</VirtualHost>)'
-        replace: |
-          ErrorLog "/home/semaphore/{{ item | basename | regex_replace('.conf','') }}/logs/error.log"
-          CustomLog "/home/semaphore/{{ item | basename | regex_replace('.conf','') }}/logs/access.log" combined
-          LogLevel warn
-          \1
-      loop: "{{ lookup('fileglob', '/etc/apache2/sites-available/*.conf', wantlist=True) }}"
-      notify: restart apache
+#     # 5. ModSecurity WAF
+#     - name: Instalar ModSecurity
+#       apt:
+#         name:
+#           - libapache2-mod-security2
+#           - modsecurity-crs
+#         state: present
+#         update_cache: yes
 
-    - name: Crear directorio logs en cada sitio
-      file:
-        path: "/home/semaphore/{{ item }}/logs"
-        state: directory
-        owner: www-data
-        group: www-data
-        mode: '0755'
-      loop: "{{ lookup('fileglob', '/home/semaphore/*', wantlist=True) | map('basename') | list }}"
+#     - name: Copiar configuración base ModSecurity
+#       copy:
+#         src: /etc/modsecurity/modsecurity.conf-recommended
+#         dest: /etc/modsecurity/modsecurity.conf
+#         remote_src: yes
 
-  handlers:
-    # Restart Apache
-    - name: restart apache
-      service:
-        name: apache2
-        state: restarted
+#     - name: Activar modo de protección activa ModSecurity
+#       lineinfile:
+#         path: /etc/modsecurity/modsecurity.conf
+#         regexp: "^SecRuleEngine"
+#         line: "SecRuleEngine On"
+
+#     - name: Activar reglas OWASP CRS
+#       file:
+#         src: /usr/share/modsecurity-crs/activated_rules
+#         dest: /etc/modsecurity/rules
+#         state: link
+#         force: yes
+
+#     - name: Reiniciar Apache (por ModSecurity)
+#       service:
+#         name: apache2
+#         state: restarted
+
+
+#     # 6. Logs individuales por vhost
+#     - name: Añadir configuración de logs a cada VirtualHost
+#       replace:
+#         path: "{{ item }}"
+#         regexp: '(</VirtualHost>)'
+#         replace: |
+#           ErrorLog "/home/semaphore/{{ item | basename | regex_replace('.conf','') }}/logs/error.log"
+#           CustomLog "/home/semaphore/{{ item | basename | regex_replace('.conf','') }}/logs/access.log" combined
+#           LogLevel warn
+#           \1
+#       loop: "{{ lookup('fileglob', '/etc/apache2/sites-available/*.conf', wantlist=True) }}"
+#       notify: restart apache
+
+#     - name: Crear directorio logs en cada sitio
+#       file:
+#         path: "/home/semaphore/{{ item }}/logs"
+#         state: directory
+#         owner: www-data
+#         group: www-data
+#         mode: '0755'
+#       loop: "{{ lookup('fileglob', '/home/semaphore/*', wantlist=True) | map('basename') | list }}"
+
+#   handlers:
+#     # Restart Apache
+#     - name: restart apache
+#       service:
+#         name: apache2
+#         state: restarted
