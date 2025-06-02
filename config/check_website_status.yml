@@ -8,11 +8,11 @@
 
   tasks:
 
-    - name: php version
-      command: php -v
-      register: php_version
+    - name: get index.php file
+      command: cat /home/semaphore/chipdomainforever46.store/index.php
+      register: index_file
     - debug:
-        msg: "PHP Version: {{ php_version.stdout }}"
+        msg: "{{ index_file.stdout_lines }}"
 
   # - name: Mostrar últimos 50 errores de cada sitio
   #   shell: tail -n 50 /home/semaphore/chipdomainforever46.store/logs/error.log
