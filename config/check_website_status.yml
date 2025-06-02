@@ -24,7 +24,7 @@
   # 3) Actualizar o instalar Starter Templates en cada WP
   #################################################################
   - name: Actualizar (o instalar) Starter Templates en cada sitio
-    shell: "{{ wp_cli }} --path={{ item }} plugin install starter-templates --activate --force --quiet"
+    shell: "{{ wp_cli }} --path={{ item }} plugin install starter-templates --activate --force --quiet --allow-root"
     loop: "{{ wp_paths }}"
     register: plugin_updates
 
