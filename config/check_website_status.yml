@@ -7,27 +7,22 @@
     ansible_remote_tmp: "/tmp/.ansible-123324453"
   tasks:
 
-  - name: Buscar todos los wp-config.php
-    find:
-      paths: /home/semaphore
+  - name: Arreglar permisos de sitios
+    file:
+      path: "{{ item }}"
       recurse: yes
-      patterns: wp-config.php
-    register: wp_configs
-    
-  - name: Habilitar WP_DEBUG
-    lineinfile:
+      state: directory
+      mode: '0755'
+      owner: www-data
+      group: www-data
+    loop: "{{ lookup('ansible.builtin.find', '/home/semaphore', recurse=False, file_type='directory').files | map(attribute='path') | list }}"
+
+  - name: Arreglar permisos de archivos dentro de sitios
+    file:
       path: "{{ item.path }}"
-      regexp: "define\\('WP_DEBUG',.*\\);"
-      line: "define('WP_DEBUG', true);"
-      insertafter: "/* That's all, stop editing! Happy publishing. */"
-      backup: yes
-    loop: "{{ wp_configs.files }}"
-    
-  - name: Asegurar otras constantes de debug
-    blockinfile:
-      path: "{{ item.path }}"
-      marker: "# {mark} ANSIBLE DEBUG SETTINGS"
-      block: |
-        define('WP_DEBUG_DISPLAY', true);
-        define('WP_DEBUG_LOG', true);
-    loop: "{{ wp_configs.files }}"
+      mode: '0644'
+      owner: www-data
+      group: www-data
+    with_fileglob:
+      - "/home/semaphore/*/*"
+
